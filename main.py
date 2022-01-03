@@ -20,7 +20,8 @@ cardBoards = ["Picture of Cardboard which doesn't contain food", "Picture of a C
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 
-BATCH_SIZE = 2
+# as a percentage
+MARGIN_OF_ERROR=0.1
 
 ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg']
 def allowed_file(filename):
@@ -29,25 +30,27 @@ def allowed_file(filename):
 def categorize(img, types, top_predictions):
     image = preprocess(img).unsqueeze(0).to(device)
     text = clip.tokenize(types).to(device)
-
     with torch.no_grad():
 
         logits_per_image, logits_per_text = model(image, text)
         probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-        text_probs = logits_per_text.softmax(dim=-1).cpu().numpy()
 
-    topThree = np.argpartition(probs[0], -BATCH_SIZE)[-BATCH_SIZE:]
-    ans = []
+    largestProbIndex = np.argmax(probs[0])
+    
+    ans = [largestProbIndex]
+    for i in range(len(probs[0])):
+        if i != largestProbIndex:
+            if probs[0][largestProbIndex] - probs[0][i] < MARGIN_OF_ERROR:
+                ans.append(i)
 
-    for i in range(BATCH_SIZE):
+    mats = []
+    for x in ans:
         top_predictions.append({
-            "Material": types[topThree[i]],
-            "percentage": probs[0][i]
+            "Material": types[x],
+            "percentage": probs[0][x]
         })
-        ans.append(types[topThree[i]])
-        
-
-    return ans
+        mats.append(types[x])    
+    return mats
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -73,11 +76,8 @@ def predict():
                 
                 img = Image.open(file)
 
-                # err["predictions"] = tests
-
-                # Looks like there is an error inside the categorize function
                 mat = categorize(img, materials, top_predictions)
-
+                err["predictions"] = tests
 
                 for material in mat:
     
@@ -97,25 +97,11 @@ def predict():
                         top_predictions = [i for i in top_predictions if i["Material"]!="Picture of Cardboard"]
                         categorize(img, cardBoards, top_predictions)
                 
-
-                topThree = []
-
-                for i in range(BATCH_SIZE):
-                    topPredicted = max(top_predictions, key=lambda x:x['percentage'])
-                    top_predictions.remove(topPredicted)
-                    topThree.append(topPredicted)
-
-
                 temp = []
-                for i in reversed(range(len(topThree))):
-                    m = topThree[i]["Material"]
+                for i in reversed(range(len(top_predictions))):
+                    m = top_predictions[i]["Material"]
                     if m in data:
                         temp.append(data[m])
-                    else:
-                        temp.append({
-                            "Material": "NonebutAtLeastHere",
-                            "Recyclability": "NonebutAtLeastHere"
-                        })
                 ans.append(temp)
             except:
                 return jsonify({'error': err})
