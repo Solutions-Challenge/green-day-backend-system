@@ -7,8 +7,8 @@ MIN_INSTANCES=1
 MAX_INSTANCES=3
 SERVICE_ACCOUNT=greenday-service-account@greenday-6aba2.iam.gserviceaccount.com
 
-# docker build -t $GOOGLE_REPO/$IMAGE_NAME:latest .
-# docker tag $GOOGLE_REPO/$IMAGE_NAME:latest $CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest
+docker build -t $GOOGLE_REPO/$IMAGE_NAME:latest .
+docker tag $GOOGLE_REPO/$IMAGE_NAME:latest $CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest
 
 gcloud builds submit --tag $CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest \
     --project=$GOOGLE_PROJECT_ID
