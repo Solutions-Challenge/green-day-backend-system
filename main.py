@@ -6,6 +6,7 @@ import numpy as np
 import os
 from flask_cors import CORS
 from data import data
+from data import mapData
 
 app = Flask(__name__)
 
@@ -52,32 +53,30 @@ def categorize(img, types, top_predictions):
         mats.append(types[x])    
     return mats
 
+@app.route('/mapData', methods=['GET'])
+def getData():
+    return jsonify({'success': mapData})
+
+
 @app.route('/predict', methods=['POST'])
 def predict():
-
-    top_predictions = []
-    tests = 0
-
     if request.method == "POST":
         files = request.files.getlist('files[]')
 
         ans = []
-        err = {"predictions": 0}
 
         for file in files:
+            top_predictions = []
             if file is None or file.filename == "":
                 return jsonify({'error': 'no file found'})
             if not allowed_file(file.filename):
                 return jsonify({'error': 'format not supported'})
-            
-            tests += 1
             
             try:
                 
                 img = Image.open(file)
 
                 mat = categorize(img, materials, top_predictions)
-                err["predictions"] = tests
 
                 for material in mat:
     
@@ -104,7 +103,7 @@ def predict():
                         temp.append(data[m])
                 ans.append(temp)
             except:
-                return jsonify({'error': err})
+                return jsonify({'error': 'error during prediction'})
 
         return jsonify({'success': ans})
     return jsonify({'error': 'not POST request'})

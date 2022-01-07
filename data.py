@@ -1,5 +1,5 @@
 data = {
-    "Picture of a Wooden Object": { 
+    "Picture of a Wooden Object": {
         "Material": "Wood",
         "Recyclability": "Recyclable"
     },
@@ -27,7 +27,7 @@ data = {
         "Material": "Plastic Bag",
         "Recyclability": "Not Recyclable"
     },
-    "Picture of a Plastic Wrapper or Plastic Film":{
+    "Picture of a Plastic Wrapper or Plastic Film": {
         "Material": "Plastic Wrapper or Film",
         "Recyclability": "Not Recyclable"
     },
@@ -76,3 +76,37 @@ data = {
         "Recyclability": "Bio-degradable"
     }
 }
+
+mapData = [
+    {
+        "key": 1,
+        "name": 'Wood',
+        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Wood.png'
+    },
+    {
+        "key": 2,
+        "name": 'Metal',
+        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Metal.png'
+    },
+    {
+        "key": 3,
+        "name": 'Glass',
+        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Glass.png'
+    },
+    {
+        "key": 4,
+        "name": 'Plastic',
+        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Plastic.png'
+    },
+    {
+        "key": 5,
+        "name": 'Paper',
+        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Paper.png'
+    },
+    {
+        "key": 6,
+        "name": 'Electronic',
+        "icon": "https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Electronic.png"
+    },
+
+]
