@@ -6,3 +6,5 @@ __pycache__
 .pytest_cache
 serverTest.__pycache__
 requirements.txt
+venv
+wsl
