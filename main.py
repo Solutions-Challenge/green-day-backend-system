@@ -90,6 +90,11 @@ def delete_blob(bucket_name, blob_name):
 
     return "Blob {} deleted.".format(blob_name)
 
+def blob_exists(bucket_name, filename):
+   bucket = storage_client.get_bucket(bucket_name)
+   blob = bucket.blob(filename)
+   return blob.exists()
+
 # as a percentage
 MARGIN_OF_ERROR=0.1
 
@@ -141,29 +146,69 @@ def verify_user(id_token):
         return False
     return decoded_token
      
-@app.route('/database/createUser', methods=['GET'])   
-def create_user(id_token):
-    user = verify_user(id_token)
-    if not user:
-        return jsonify({'failure': "ID token is invalid"})
-    
-    new_user = auth.get_user(user.uid)
-    data = {
-        'email': new_user.email
-    }
-    db.collection(u'users').document(user.uid).set(data)
+@app.route('/database/createUser', methods=['POST'])   
+def create_user():
+    if request.method == 'POST':
+        id_token = request.form['id_token'].strip()
 
-@app.route('/database/deleteUser', methods=['GET'])
-def delete_user_data(id_token):
-    user = verify_user(id_token)
-    if not user:
-        return jsonify({'failure': "ID token is invalid"})
-    uid = user["uid"]
+        user = verify_user(id_token)
+        if not user:
+            return jsonify({'failure': "ID token is invalid"})
+        
+        new_user = auth.get_user(user['uid'])
+        data = {
+            'email': new_user.email
+        }
 
-    doc_ref = db.collection('users').document(uid)
-    
-    delete_collection(doc_ref.collection('photos'), 1000)
-    doc_ref.delete()
+        docref = db.collection(u'users').document(user['uid'])
+        
+        doc = docref.get()
+
+        if doc.exists:
+            return jsonify({'error': "User already exists"})
+
+        docref.set(data)
+        return jsonify({"success": "User was created"})
+    else:
+        return jsonify({'error': 'not POST request'})
+
+@app.route('/database/deleteUser', methods=['DELETE'])
+def delete_user_data():
+    if request.method == "DELETE":
+        id_token = request.form['id_token'].strip()
+        
+        user = verify_user(id_token)
+        if not user:
+            return jsonify({'failure': "ID token is invalid"})
+        uid = user["uid"]
+
+        photo_ref = db.collection('users').document(uid).collection("photos")
+        user_ref = db.collection('users').document(uid)
+        
+        user_doc = user_ref.get()
+
+        if not user_doc.exists:
+            return jsonify({'error': "User doesn't exists"})
+
+        array = []
+
+        for image_id in photo_ref.stream():
+            array.append(image_id.id)
+            try:
+                delete_blob("greenday-user-photos", image_id.id)
+            except:
+                pass
+
+        delete_collection(user_ref.collection('photos'), 1000)
+        user_ref.delete()
+        
+
+        return jsonify({'success': {
+            'code': 'User data was deleted and {} photo(s) deleted'.format(len(array)),
+            'photos': tuple(array)
+        }})
+    else:
+        return jsonify({'error': 'not DELETE request'})
 
 @app.route('/database/addPic', methods=['POST'])
 def add_picture():
@@ -175,84 +220,88 @@ def add_picture():
         # Verify auth token and find user in database
         user = verify_user(id_token)
         if not user:
-            return jsonify({'failure': "ID token is invalid"})
+            return jsonify({'error': "ID token is invalid"})
 
         uid = user["uid"]
-        key = data['key']
-
-        # users/user/photos/photo_key/metadata
-        db.collection('users').document(uid).collection("photos").document(key).set(data)
+        photo_id = data['key']
 
         bucket_name = 'greenday-user-photos'
-        
-        bucket = storage_client.bucket(bucket_name)
-        
-        stats = storage.Blob(bucket=bucket, name=bucket_name).exists(storage_client)
-        if not stats: 
-            return jsonify({"error": "Key is already used"})
-        string = upload_blob_from_memory(bucket_name, image, key)
+        if blob_exists(bucket_name, photo_id):
+            return jsonify({"error": "Photo already exists within database"})
+
+        # users/user/photos/photo_key/metadata
+        db.collection('users').document(uid).collection("photos").document(photo_id).set(data)
+
+        string = upload_blob_from_memory(bucket_name, image, photo_id)
         
         return jsonify({"success":string})
     else:
-        return jsonify({'error': 'not GET request'})
+        return jsonify({'error': 'not POST request'})
   
 
 @app.route('/database/getPic', methods=['GET'])
 def get_picture():
-    id_token = request.form['id_token'].strip()
-    photo_id = request.form['photo_id'].strip()
+    if request.method == "GET":
+        id_token = request.form['id_token'].strip()
+        photo_id = request.form['photo_id'].strip()
+        meta_flag = request.form['meta_flag'].strip()
+        
+        if meta_flag.lower() == "false":
+            meta_flag = False 
+        elif meta_flag.lower() == 'true': 
+            meta_flag = True 
+        else:
+            meta_flag = False
 
-    # Verify auth token and find user in database
-    user = verify_user(id_token)
-    if not user:
-        return jsonify({'failure': "ID token is invalid"})
-    uid = user["uid"]
+        # Verify auth token and find user in database
+        user = verify_user(id_token)
+        if not user:
+            return jsonify({'failure': "ID token is invalid"})
+        uid = user["uid"]
 
-    # users/user/photos/photo_key/metadata
-    docref = db.collection('users').document(uid).collection("photos").document(photo_id)
-    
-    doc = docref.get()
-    if not doc.exists:
-        return "Picture doesn't exist for this user"
-    
-    picture = download_blob_into_memory("greenday-user-photos", photo_id)['picture']
+        # users/user/photos/photo_key/metadata
+        docref = db.collection('users').document(uid).collection("photos").document(photo_id)
+        
+        # Check if photo_id entry exists
+        doc = docref.get()
+        if not doc.exists:
+            return jsonify({'error': "Picture doesn't exist for this user"})
+        
+        # If meta flag is true it only downloads meta data and not the photo
+        if (meta_flag == False):
+            picture = download_blob_into_memory("greenday-user-photos", photo_id)['picture']
+        else:
+            picture = "Meta flag was enabled"
 
-    return jsonify({
-        "success:":{
-            "photo": str(picture),
-            "photo-meta": doc
-        }
-    })
-
-@app.route('/database/getPicMeta', methods=['GET'])
-def get_picture_meta(id_token, key):
-    # Verify auth token and find user in database
-    user = verify_user(id_token)
-    if not user:
-        return jsonify({'failure': "ID token is invalid"})
-    uid = user["uid"]
-
-    # users/user/photos/photo_key/metadata
-    docref = db.collection('users').document(uid).collection("photos").document(key)
-    doc = docref.get()
-
-    if not doc.exists:
-        return jsonify({"failure": "Picture doesn't exist"})
-
-    return doc.to_dict()
+        return jsonify({
+            "success:":{
+                "photo": str(picture),
+                "photo-meta": doc.to_dict()
+            }
+        })
+    else:
+        return jsonify({'error': 'not GET request'})
 
 @app.route('/database/getPicKeys', methods=['GET'])
-def get_picture_keys(id_token):
-    # Verify our auth token and find uid to put photo data into database
-    user = verify_user(id_token)
-    if not user:
-        return jsonify({'failure': "ID token is invalid"})
-    uid = user["uid"]
+def get_picture_keys():
+    if request.method == "GET":
+        id_token = request.form['id_token'].strip()
+        # Verify our auth token and find uid to put photo data into database
+        user = verify_user(id_token)
+        if not user:
+            return jsonify({'failure': "ID token is invalid"})
+        uid = user["uid"]
 
-    docref = db.collection('users').document(uid).collection("photos")
-    docs = docref.stream()
-    for doc in docs:
-        print(doc.id)
+        docref = db.collection('users').document(uid).collection("photos")
+        docs = docref.stream()
+        
+        array = []
+        for doc in docs:
+            array.append(doc.id)
+        
+        return jsonify({'success': array})
+    else: 
+        return jsonify({'error': 'not GET request'})
 
 @app.route('/database/deletePic', methods=['DELETE'])
 def delete_picture():
@@ -265,15 +314,14 @@ def delete_picture():
             return jsonify({'failure': "ID token is invalid"})
         uid = user["uid"]
 
+        photo_ref = db.collection('users').document(uid).collection("photos").document(photo_id)
         
-        doc_ref = db.collection('users').document(uid).collection("photos").document(photo_id)
-        
-        doc = doc_ref.get()
+        photo = photo_ref.get()
 
-        if not doc.exists:
+        if not photo.exists:
             return jsonify({"failure": "Picture doesn't exist or user doesn't own photo"})
         
-        doc_ref.delete()
+        photo_ref.delete()
         delete_blob("greenday-user-photos", photo_id)
 
         return jsonify({'success': "Picture was deleted"})
@@ -291,7 +339,7 @@ def add_item():
         # Verify our auth token and find uid to put photo data into database
         user = verify_user(id_token)
         if not user:
-            return jsonify({'failure': "ID token is invalid"})
+            return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
         # Gets photo by 
