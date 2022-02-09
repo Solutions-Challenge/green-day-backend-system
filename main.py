@@ -14,7 +14,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import auth
 import base64
-
+import datetime
 storage_client = storage.Client()
 
 cred = credentials.Certificate("greenday-6aba2-firebase-adminsdk-wppee-88cc844ed3.json")
@@ -35,6 +35,29 @@ cardBoards = ["Picture of Cardboard which doesn't contain food", "Picture of a C
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 
+def generate_download_signed_url_v4(bucket_name, blob_name):
+    """Generates a v4 signed URL for downloading a blob.
+
+    Note that this method requires a service account key file. You can not use
+    this if you are using Application Default Credentials from Google Compute
+    Engine or from the Google Cloud SDK.
+    """
+    # bucket_name = 'your-bucket-name'
+    # blob_name = 'your-object-name'
+
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+
+    url = blob.generate_signed_url(
+        version="v4",
+        # This URL is valid for 15 minutes
+        expiration=datetime.timedelta(minutes=5),
+        # Allow GET requests using this URL.
+        method="GET",
+    )
+
+    return url
 def upload_blob_from_memory(bucket_name, contents, destination_blob_name):
     """Uploads a file to the bucket."""
 
@@ -269,7 +292,6 @@ def add_picture():
         return jsonify({"success":string})
     else:
         return jsonify({'error': 'not POST request'})
-  
 
 """
     /database/getPic [GET]
@@ -314,7 +336,7 @@ def get_picture():
         if (meta_flag == False):
             picture = download_blob_into_memory("greenday-user-photos", photo_id)['picture']
         else:
-            picture = "Meta flag was enabled"
+            picture = generate_download_signed_url_v4('greenday-user-photos', photo_id)
 
         return jsonify({
             "success:":{
