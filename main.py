@@ -145,7 +145,18 @@ def verify_user(id_token):
     except:
         return False
     return decoded_token
-     
+
+
+
+"""
+    /database/createUser [POST]
+    INPUT:
+    'id_token': JWT token given by user
+
+    PURPOSE: 
+    Creates a user entry in firebase
+    
+"""
 @app.route('/database/createUser', methods=['POST'])   
 def create_user():
     if request.method == 'POST':
@@ -172,6 +183,15 @@ def create_user():
     else:
         return jsonify({'error': 'not POST request'})
 
+"""
+    /database/deleteUser [DELETE]
+    INPUT:
+    'id_token': JWT token given by user
+
+    PURPOSE:
+    Delete user from database and all photos associated with account
+
+"""
 @app.route('/database/deleteUser', methods=['DELETE'])
 def delete_user_data():
     if request.method == "DELETE":
@@ -210,6 +230,18 @@ def delete_user_data():
     else:
         return jsonify({'error': 'not DELETE request'})
 
+"""
+    // THIS DOESN'T CHECK IF DATA IS CORRECTLY FORMATTED
+    /database/addPic [POST]
+    INPUT:
+    'id_token': JWT token given by user
+    'data': The json containing the photo meta data
+    'image_base64': The raw base 64 code of the image
+
+    PURPOSE:
+    Adds a picture to user entry in firebase and google cloud storage along with metadata
+
+"""
 @app.route('/database/addPic', methods=['POST'])
 def add_picture():
     if request.method == "POST":
@@ -239,6 +271,17 @@ def add_picture():
         return jsonify({'error': 'not POST request'})
   
 
+"""
+    /database/getPic [GET]
+    INPUT:
+    'id_token': JWT token given by user
+    'photo_id': The name of the photo
+    'meta_flag': If this is true only a photos metadata is given
+
+    PURPOSE:
+    Returns the base64 encoding of photo and json with metadata
+
+"""
 @app.route('/database/getPic', methods=['GET'])
 def get_picture():
     if request.method == "GET":
@@ -282,6 +325,15 @@ def get_picture():
     else:
         return jsonify({'error': 'not GET request'})
 
+"""
+    /database/getPicKeys [GET]
+    INPUT:
+    'id_token': JWT token given by user
+
+    PURPOSE:
+    Returns all photo_ids associated with user account
+
+"""
 @app.route('/database/getPicKeys', methods=['GET'])
 def get_picture_keys():
     if request.method == "GET":
@@ -303,6 +355,18 @@ def get_picture_keys():
     else: 
         return jsonify({'error': 'not GET request'})
 
+"""
+    //THIS DOESNT CHECK IF DATA IS VALID OR NOT
+    /database/addItem
+    INPUT:
+    'id_token': JWT token given by user 
+    'photo_id': The name of the photo
+    'data': The bounding box data 
+
+    PURPOSE:
+    Deletes a picture from user database entry and user photos if photo is associated with account
+
+"""
 @app.route('/database/deletePic', methods=['DELETE'])
 def delete_picture():
     if request.method == 'DELETE':
@@ -328,6 +392,18 @@ def delete_picture():
     else:
         return jsonify({'error': 'not DELETE request'}) 
 
+"""
+    //THIS DOESNT CHECK IF DATA IS VALID OR NOT
+    /database/addItem
+    INPUT:
+    'id_token': JWT token given by user 
+    'photo_id': The name of the photo
+    'data': The bounding box data 
+
+    PURPOSE:
+    This adds a json to the MULTI array which holds data for bounding boxes
+
+"""
 @app.route('/database/addItem', methods=['POST'])
 def add_item():
     if request.method == "POST":
@@ -343,12 +419,15 @@ def add_item():
         uid = user["uid"]
 
         # Gets photo by 
-        doc_ref = db.collection('users').document(uid).collection("photos").document(photo_id)
-        doc = doc_ref.get()
+        photo_ref = db.collection('users').document(uid).collection("photos").document(photo_id)
+        doc = photo_ref.get()
 
+        if not doc.exists:
+            return jsonify({"failure": "Picture doesn't exist or user doesn't own photo"})
+ 
         new_json = doc.to_dict() 
         new_json['multi'].append(data)
-        doc_ref.set(new_json)
+        photo_ref.set(new_json)
 
         return jsonify({'success': "Item was added"})
     else:
