@@ -345,7 +345,7 @@ def get_picture():
             }
         })
     else:
-        return jsonify({'error': 'not GET request'})
+        return jsonify({'error': 'not POST request'})
 
 """
     /database/getPicKeys [GET]
@@ -356,9 +356,9 @@ def get_picture():
     Returns all photo_ids associated with user account
 
 """
-@app.route('/database/getPicKeys', methods=['GET'])
+@app.route('/database/getPicKeys', methods=['POST'])
 def get_picture_keys():
-    if request.method == "GET":
+    if request.method == "POST":
         id_token = request.form['id_token'].strip()
         # Verify our auth token and find uid to put photo data into database
         user = verify_user(id_token)
@@ -375,7 +375,7 @@ def get_picture_keys():
         
         return jsonify({'success': array})
     else: 
-        return jsonify({'error': 'not GET request'})
+        return jsonify({'error': 'not POST request'})
 
 """
     //THIS DOESNT CHECK IF DATA IS VALID OR NOT
