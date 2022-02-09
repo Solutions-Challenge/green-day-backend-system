@@ -52,7 +52,7 @@ def generate_download_signed_url_v4(bucket_name, blob_name):
     url = blob.generate_signed_url(
         version="v4",
         # This URL is valid for 15 minutes
-        expiration=datetime.timedelta(minutes=5),
+        expiration=datetime.timedelta(minutes=2),
         # Allow GET requests using this URL.
         method="GET",
     )
