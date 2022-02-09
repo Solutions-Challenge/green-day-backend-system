@@ -294,7 +294,7 @@ def add_picture():
         return jsonify({'error': 'not POST request'})
 
 """
-    /database/getPic [GET]
+    /database/getPic [POST]
     INPUT:
     'id_token': JWT token given by user
     'photo_id': The name of the photo
@@ -304,9 +304,9 @@ def add_picture():
     Returns the base64 encoding of photo and json with metadata
 
 """
-@app.route('/database/getPic', methods=['GET'])
+@app.route('/database/getPic', methods=['POST'])
 def get_picture():
-    if request.method == "GET":
+    if request.method == "POST":
         id_token = request.form['id_token'].strip()
         photo_id = request.form['photo_id'].strip()
         meta_flag = request.form['meta_flag'].strip()
