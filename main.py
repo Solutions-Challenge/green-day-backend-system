@@ -15,10 +15,13 @@ from firebase_admin import firestore
 from firebase_admin import auth
 import base64
 import datetime
+import requests
+import googlemaps
 storage_client = storage.Client()
 
 cred = credentials.Certificate("greenday-6aba2-firebase-adminsdk-wppee-88cc844ed3.json")
 firebase_admin.initialize_app(cred)
+gmaps = googlemaps.Client(key="AIzaSyAVR75_hunpkE3V1kbcJXfKHt1D2B3YgQs")
 
 db = firestore.client()
 
@@ -58,6 +61,7 @@ def generate_download_signed_url_v4(bucket_name, blob_name):
     )
 
     return url
+
 def upload_blob_from_memory(bucket_name, contents, destination_blob_name):
     """Uploads a file to the bucket."""
 
@@ -169,7 +173,176 @@ def verify_user(id_token):
         return False
     return decoded_token
 
+def most_frequent(List):
+    if List == []:
+        return None
+    counter = 0
+    num = List[0]
+     
+    for i in List:
+        curr_frequency = List.count(i)
+        if(curr_frequency> counter):
+            counter = curr_frequency
+            num = i
+ 
+    return num
 
+"""
+    INPUT:
+    latitude: X coordinate
+    longitude: Y coordinate
+    OUTPUT:
+    {
+        "subsection-2": level 2 admin zone if exists else post-code else admin 1 zone,
+        "subsection-1": level 1 admin zone,
+        "postcode": code,
+        "country": country
+    }
+
+    PURPOSE:
+    Returns a normalized global address system so we can effectively partition our data
+"""
+def extract_location_data(latitude, longitude):
+    latitude = float(request.form['latitude'].strip())
+    longitude = float(request.form['longitude'].strip())
+    addresses = gmaps.reverse_geocode((latitude, longitude))
+    
+    sub1 = []
+    sub2 = []
+    admin1 = []
+    admin2 = []
+    code = []
+    country = []
+    locality = []
+
+    for address in addresses:
+        for t in address['address_components']:
+            if "sublocality_level_1" in t['types']:
+                #print("sub1", t['long_name'])
+                sub1.append(t['long_name'])
+            if "sublocality_level_2" in t['types']:
+                #print('sub2', t['long_name'])
+                sub2.append(t['long_name'])
+            if "administrative_area_level_2" in t['types']:
+                #print('admin2', t['long_name'])
+                admin2.append(t['long_name'])
+            if "administrative_area_level_1" in t['types']:
+                #print('admin1', t['long_name'])
+                admin1.append(t['long_name'])
+            if "country" in t['types']:
+                #print('country', t['long_name'])
+                country.append(t['long_name'])
+            if "postal_code" in t['types']:
+                #print('code', t['long_name'])
+                code.append(t['long_name'])
+            if "locality" in t['types']:
+                #print('code', t['long_name'])
+                locality.append(t['long_name'])    
+    
+    sub1 = most_frequent(sub1) 
+    sub2 = most_frequent(sub2)
+    admin1 = most_frequent(admin1) 
+    admin2 = most_frequent(admin2)
+    country = most_frequent(country)
+    code = most_frequent(code)
+    locality = most_frequent(locality)
+    
+    return {
+        "admin2": admin2 if admin2 != None else sub2,
+        "admin1": admin1 if admin1 != None else sub1,
+        "postcode": code,
+        "country": country,
+        "locality": locality
+    }
+
+"""
+    INPUT:
+    latitude: X coordinate
+    longitude: Y coordinate
+
+    PURPOSE:
+    Returns a geolocation based on coordinates
+
+    Notes:
+    admin2 is a level 2 admin zone which is US county or it's equivalent [100 sq mi, 40000sq mi]
+    admin1 is a level 1 admin zone which is a US state or US state equivalent. Size is too large to be relavant.
+    postcode: Is like a universal zipcode for each country [~1 sq mi, 10000 sq mi] Most are on the smaller side and the largest ones are the least populated
+    country: Is self explanatory 
+    locality: A town or city inside a county essentially a level 3 admin zone [1 sq mi, 100 sq mi] 
+    
+    Relative Size
+    postcode ~ locality < admin2 < admin1 < counttry
+"""
+@app.route('/location/reverseGeolocation', methods=['POST'])   
+def reverse_geolocation():
+    latitude = float(request.form['latitude'].strip())
+    longitude = float(request.form['longitude'].strip())
+    geolocation = gmaps.reverse_geocode((latitude, longitude))
+
+    return jsonify({"success": geolocation})
+
+"""
+    INPUT:
+    latitude: X coordinate
+    longitude: Y coordinate
+
+    PURPOSE:
+    Adds a trashcan with picture to location database
+
+    Notes:
+    admin2 is a level 2 admin zone which is US county or it's equivalent [100 sq mi, 40000sq mi]
+    admin1 is a level 1 admin zone which is a US state or US state equivalent. Size is too large to be relavant.
+    postcode: Is like a universal zipcode for each country [~1 sq mi, 10000 sq mi] Most are on the smaller side and the largest ones are the least populated
+    country: Is self explanatory 
+    locality: A town or city inside a county essentially a level 3 admin zone [1 sq mi, 100 sq mi] 
+    
+    Relative Size
+    postcode ~ locality < admin2 < admin1 < counttry
+"""
+@app.route('/trashcan/createTrashcanCoords', methods=['POST'])   
+def create_trashcan_coords():
+    if request.method == 'POST':
+        latitude = float(request.form['latitude'].strip())
+        longitude = float(request.form['longitude'].strip())
+
+        location_data = extract_location_data(latitude, longitude)
+        location_key = location_data['postcode']
+        country = location_data['country'].lower()
+        locality = location_data['locality'].lower()
+        if location_key == None:
+            location_key = location_data['admin2'].lower()
+        
+        
+        trash_key = "1234"
+
+        # Gets the level 2 admin zone and sets the key to zip code or level 2 admin zone name
+        docref = db.collection(u'location_data').document(country).collection("postal_codes").document(location_key)
+        trashcanref = db.collection('trashcans').document(trash_key)
+        
+        # Helps me know where the postal code is
+        docref.set({
+            "locality": locality
+        })
+
+        loc_cans = docref.collection("trashcans").document(trash_key)
+        loc_cans.set({
+            'latitude': latitude,
+            'longitude': longitude,
+            'ref': trashcanref
+        })
+
+        trashcanref.set({
+            'user': "Albert Lee",
+            'pic_key': "abcdef",
+            'ref': loc_cans
+        })
+
+        return jsonify({'success': 
+            { 
+                "location_key": location_key,
+            }})
+    else:
+        return jsonify({'error': 'not POST request'})
 
 """
     /database/createUser [POST]
@@ -510,4 +683,4 @@ def predict():
     return jsonify({'error': 'not POST request'})
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8081)))
