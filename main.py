@@ -29,11 +29,11 @@ app = Flask(__name__)
 
 CORS(app)
 
-materials = ["Picture of a Wooden Object", "Picture of a Metallic Object", "Picture of Plastic", "Picture of Cardboard", "Picture of Paper", "Picture of Glass", "Picture of an Electronic device", "Picture of a Human", "Picture of Rubber or Latex Gloves", "Picture of an Animal", "Picture of a Plant"]
-plastics = ["Picture of Styrofoam", "Picture of Plastic Bag", "Picture of a Plastic Wrapper or Plastic Film", "Picture of Bubble Wrap"]
-papers = ["Picture of Shredded Paper", "Picture of Soiled Paper", "Picture of Clean Paper"]
-glasses = ["Picture of Broken Glass", "Picture of Ceramic", "Picture of Glassware"]
-cardBoards = ["Picture of Cardboard which doesn't contain food", "Picture of a Cardboard which contains pizza"]
+materials = ["Imgture of a Wooden Object", "Imgture of a Metallic Object", "Imgture of Plastic", "Imgture of Cardboard", "Imgture of Paper", "Imgture of Glass", "Imgture of an Electronic device", "Imgture of a Human", "Imgture of Rubber or Latex Gloves", "Imgture of an Animal", "Imgture of a Plant"]
+plastics = ["Imgture of Styrofoam", "Imgture of Plastic Bag", "Imgture of a Plastic Wrapper or Plastic Film", "Imgture of Bubble Wrap"]
+papers = ["Imgture of Shredded Paper", "Imgture of Soiled Paper", "Imgture of Clean Paper"]
+glasses = ["Imgture of Broken Glass", "Imgture of Ceramic", "Imgture of Glassware"]
+cardBoards = ["Imgture of Cardboard which doesn't contain food", "Imgture of a Cardboard which contains pizza"]
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
@@ -203,8 +203,6 @@ def most_frequent(List):
     Returns a normalized global address system so we can effectively partition our data
 """
 def extract_location_data(latitude, longitude):
-    latitude = float(request.form['latitude'].strip())
-    longitude = float(request.form['longitude'].strip())
     addresses = gmaps.reverse_geocode((latitude, longitude))
     
     sub1 = []
@@ -238,7 +236,7 @@ def extract_location_data(latitude, longitude):
             if "locality" in t['types']:
                 #print('code', t['long_name'])
                 locality.append(t['long_name'])    
-    
+
     sub1 = most_frequent(sub1) 
     sub2 = most_frequent(sub2)
     admin1 = most_frequent(admin1) 
@@ -278,7 +276,7 @@ def reverse_geolocation():
     latitude = float(request.form['latitude'].strip())
     longitude = float(request.form['longitude'].strip())
     geolocation = gmaps.reverse_geocode((latitude, longitude))
-
+    
     return jsonify({"success": geolocation})
 
 """
@@ -297,53 +295,172 @@ def reverse_geolocation():
     locality: A town or city inside a county essentially a level 3 admin zone [1 sq mi, 100 sq mi] 
     
     Relative Size
-    postcode ~ locality < admin2 < admin1 < counttry
+    postcode ~ locality < admin2 < admin1 < country
 """
-@app.route('/trashcan/createTrashcanCoords', methods=['POST'])   
+@app.route('/database/createTrashcanCoords', methods=['POST'])   
 def create_trashcan_coords():
     if request.method == 'POST':
-        latitude = float(request.form['latitude'].strip())
-        longitude = float(request.form['longitude'].strip())
+        data = json.loads(request.form['data'].strip())
+        id_token = request.form['id_token'].strip()
+        image = request.form['image_base64'].strip()
+        
+        image_id = data['image_id']
+        latitude = data['latitude']
+        longitude = data['longitude']
+        recycling_types = data['recycling_types']
+        date = data['date_taken']
 
-        location_data = extract_location_data(latitude, longitude)
+        # Gets location data from coordinates
+        location_data = extract_location_data(latitude, longitude) 
+
+        # If country is valid then continue otherwise return error
+        try:
+            country = location_data['country'].lower()
+        except:
+            return jsonify({"error": "Country not found. Coordinates may be invalid"})
+
+        user = verify_user(id_token)
+        if (user == False):
+            return jsonify({"error": "Auth token is invalid"})
+        uid = user['uid']
+
+        if blob_exists("trashcan_images", image_id):
+            return jsonify({"error": "Photo ID in use"})
+
+        # Get the user ref and check if it exists
+        user_ref = db.collection('users').document(uid)
+        user_doc = user_ref.get()
+        if not user_doc.exists: 
+            return jsonify({"error": "User does not exist"})
+
+        # Refers to trashcan database where photo id and othe refs are stored
+        trashcanref = db.collection('trashcans').document(image_id)
+
+        # Extracts location data and assigns them
         location_key = location_data['postcode']
         country = location_data['country'].lower()
         locality = location_data['locality'].lower()
         if location_key == None:
             location_key = location_data['admin2'].lower()
-        
-        
-        trash_key = "1234"
+
 
         # Gets the level 2 admin zone and sets the key to zip code or level 2 admin zone name
-        docref = db.collection(u'location_data').document(country).collection("postal_codes").document(location_key)
-        trashcanref = db.collection('trashcans').document(trash_key)
-        
+        location_ref = db.collection(u'location_data').document(country).collection("postal_codes").document(location_key)
         # Helps me know where the postal code is
-        docref.set({
+        location_ref.set({
             "locality": locality
         })
 
-        loc_cans = docref.collection("trashcans").document(trash_key)
-        loc_cans.set({
+        # Sets the trashcan location data
+        trashcan_location_ref = location_ref.collection("trashcans").document(image_id)
+        trashcan_location_ref.set({
             'latitude': latitude,
             'longitude': longitude,
             'ref': trashcanref
         })
 
-        trashcanref.set({
-            'user': "Albert Lee",
-            'pic_key': "abcdef",
-            'ref': loc_cans
+        # Where the user owned trashcan ref exists    
+        user_trashcans_ref = db.collection('users').document(uid).collection('owned_trashcans').document(image_id)
+        user_trashcans_ref.set({
+            'user_ref': trashcanref
         })
 
-        return jsonify({'success': 
-            { 
-                "location_key": location_key,
-            }})
+        # Sets trashcan data
+        trashcanref.set({
+            'user': uid,
+            'pic_key': image_id,
+            'location_ref': trashcan_location_ref,
+            'user_ref': user_trashcans_ref,
+            'recycling_types': recycling_types,
+            'date_taken': date
+        })
+
+        string = upload_blob_from_memory("trashcan_images", image, image_id)
+
+        return jsonify({'success': string})
     else:
         return jsonify({'error': 'not POST request'})
 
+"""
+    INPUT:
+    id_token: JWT token 
+    image_id: Name of trashcan
+
+    PURPOSE:
+    Deletes trashcan from location, user, and trashcan, and photo databases
+"""
+@app.route('/database/deleteTrashcan', methods=['DELETE'])   
+def delete_trashcan():
+    if request.method == 'DELETE':
+        id_token = request.form['id_token'].strip()
+        image_id = request.form['image_id'].strip()
+        user = verify_user(id_token)
+        
+        if (user == False):
+            return jsonify({"error": "Auth token is invalid"})
+        
+        doc_ref = db.collection('trashcans').document(image_id)
+
+        data = doc_ref.get()
+
+        if not data.exists:
+            return jsonify({"error:": "Data does not exist"})
+ 
+        data = data.to_dict()
+        if user['uid'] != data['user']:
+            return jsonify({"error:": "User doesn't own trashcan"})
+
+        loc_ref = data['location_ref']
+        user_ref = data['user_ref']
+
+        loc_ref.delete()
+        user_ref.delete()
+        doc_ref.delete()
+        delete_blob('trashcan_images', image_id)
+        return jsonify({"success": '{} deleted'.format(image_id)})
+    else:
+        return jsonify({"error": "not DELETE request"})
+
+@app.route('/database/getTrashcan', methods=['POST'])   
+def get_trashcan():
+    if request.method == 'POST':
+        id_token = request.form['id_token'].strip()
+        image_id = request.form['image_id'].strip()
+        doc_ref = db.collection('trashcans').document(image_id)
+        user = verify_user(id_token)
+        
+        if (user == False):
+            return jsonify({"error": "Auth token is invalid"})
+        
+        data = doc_ref.get()
+
+        if not data.exists:
+            return jsonify({"error:": "Data does not exist"})
+ 
+        data = data.to_dict()
+
+        if user['uid'] != data['user']:
+            return jsonify({"error:": "User doesn't own trashcan"})
+
+        loc_ref = data['location_ref']
+        loc_ref_data = loc_ref.get().to_dict()
+        latitude = loc_ref_data['latitude']
+        longitude = loc_ref_data['longitude']
+        
+        recycling_types = data['recycling_types']
+        image_base64 = download_blob_into_memory('trashcan_images', image_id)
+        date = data['date_taken']
+        return jsonify({
+            "success": {
+                'latitude': latitude,
+                'longitude': longitude,
+                'recycling_types': recycling_types,
+                'image_base64': str(image_base64['picture']),
+                'date_taken': date,
+            }
+        })
+    else:
+        return jsonify({"error": "not POST request"})
 """
     /database/createUser [POST]
     INPUT:
@@ -360,7 +477,7 @@ def create_user():
 
         user = verify_user(id_token)
         if not user:
-            return jsonify({'failure': "ID token is invalid"})
+            return jsonify({'error': "ID token is invalid"})
         
         new_user = auth.get_user(user['uid'])
         data = {
@@ -395,7 +512,7 @@ def delete_user_data():
         
         user = verify_user(id_token)
         if not user:
-            return jsonify({'failure': "ID token is invalid"})
+            return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
         photo_ref = db.collection('users').document(uid).collection("photos")
@@ -428,7 +545,7 @@ def delete_user_data():
 
 """
     // THIS DOESN'T CHECK IF DATA IS CORRECTLY FORMATTED
-    /database/addPic [POST]
+    /database/addImg [POST]
     INPUT:
     'id_token': JWT token given by user
     'data': The json containing the photo meta data
@@ -438,7 +555,7 @@ def delete_user_data():
     Adds a picture to user entry in firebase and google cloud storage along with metadata
 
 """
-@app.route('/database/addPic', methods=['POST'])
+@app.route('/database/addImg', methods=['POST'])
 def add_picture():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
@@ -451,37 +568,37 @@ def add_picture():
             return jsonify({'error': "ID token is invalid"})
 
         uid = user["uid"]
-        photo_id = data['key']
+        image_id = data['key']
 
         bucket_name = 'greenday-user-photos'
-        if blob_exists(bucket_name, photo_id):
+        if blob_exists(bucket_name, image_id):
             return jsonify({"error": "Photo already exists within database"})
 
         # users/user/photos/photo_key/metadata
-        db.collection('users').document(uid).collection("photos").document(photo_id).set(data)
+        db.collection('users').document(uid).collection("photos").document(image_id).set(data)
 
-        string = upload_blob_from_memory(bucket_name, image, photo_id)
+        string = upload_blob_from_memory(bucket_name, image, image_id)
         
         return jsonify({"success":string})
     else:
         return jsonify({'error': 'not POST request'})
 
 """
-    /database/getPic [POST]
+    /database/getImg [POST]
     INPUT:
     'id_token': JWT token given by user
-    'photo_id': The name of the photo
+    'image_id': The name of the photo
     'meta_flag': If this is true only a photos metadata is given
 
     PURPOSE:
     Returns the base64 encoding of photo and json with metadata
 
 """
-@app.route('/database/getPic', methods=['POST'])
+@app.route('/database/getImg', methods=['POST'])
 def get_picture():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
-        photo_id = request.form['photo_id'].strip()
+        image_id = request.form['image_id'].strip()
         meta_flag = request.form['meta_flag'].strip()
         
         if meta_flag.lower() == "false":
@@ -494,22 +611,22 @@ def get_picture():
         # Verify auth token and find user in database
         user = verify_user(id_token)
         if not user:
-            return jsonify({'failure': "ID token is invalid"})
+            return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
         # users/user/photos/photo_key/metadata
-        docref = db.collection('users').document(uid).collection("photos").document(photo_id)
+        docref = db.collection('users').document(uid).collection("photos").document(image_id)
         
-        # Check if photo_id entry exists
+        # Check if image_id entry exists
         doc = docref.get()
         if not doc.exists:
-            return jsonify({'error': "Picture doesn't exist for this user"})
+            return jsonify({'error': "Imgture doesn't exist for this user"})
         
         # If meta flag is true it only downloads meta data and not the photo
         if (meta_flag == False):
-            picture = download_blob_into_memory("greenday-user-photos", photo_id)['picture']
+            picture = download_blob_into_memory("greenday-user-photos", image_id)['picture']
         else:
-            picture = generate_download_signed_url_v4('greenday-user-photos', photo_id)
+            picture = generate_download_signed_url_v4('greenday-user-photos', image_id)
 
         return jsonify({
             "success:":{
@@ -521,22 +638,22 @@ def get_picture():
         return jsonify({'error': 'not POST request'})
 
 """
-    /database/getPicKeys [GET]
+    /database/getImgKeys [GET]
     INPUT:
     'id_token': JWT token given by user
 
     PURPOSE:
-    Returns all photo_ids associated with user account
+    Returns all image_ids associated with user account
 
 """
-@app.route('/database/getPicKeys', methods=['POST'])
+@app.route('/database/getImgKeys', methods=['POST'])
 def get_picture_keys():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
         # Verify our auth token and find uid to put photo data into database
         user = verify_user(id_token)
         if not user:
-            return jsonify({'failure': "ID token is invalid"})
+            return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
         docref = db.collection('users').document(uid).collection("photos")
@@ -555,35 +672,35 @@ def get_picture_keys():
     /database/addItem
     INPUT:
     'id_token': JWT token given by user 
-    'photo_id': The name of the photo
+    'image_id': The name of the photo
     'data': The bounding box data 
 
     PURPOSE:
     Deletes a picture from user database entry and user photos if photo is associated with account
 
 """
-@app.route('/database/deletePic', methods=['DELETE'])
+@app.route('/database/deleteImg', methods=['DELETE'])
 def delete_picture():
     if request.method == 'DELETE':
         id_token = request.form['id_token'].strip()
-        photo_id = request.form['photo_id'].strip()
+        image_id = request.form['image_id'].strip()
 
         user = verify_user(id_token)
         if not user:
-            return jsonify({'failure': "ID token is invalid"})
+            return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
-        photo_ref = db.collection('users').document(uid).collection("photos").document(photo_id)
+        photo_ref = db.collection('users').document(uid).collection("photos").document(image_id)
         
         photo = photo_ref.get()
 
         if not photo.exists:
-            return jsonify({"failure": "Picture doesn't exist or user doesn't own photo"})
+            return jsonify({"error": "Imgture doesn't exist or user doesn't own photo"})
         
         photo_ref.delete()
-        delete_blob("greenday-user-photos", photo_id)
+        delete_blob("greenday-user-photos", image_id)
 
-        return jsonify({'success': "Picture was deleted"})
+        return jsonify({'success': "Imgture was deleted"})
     else:
         return jsonify({'error': 'not DELETE request'}) 
 
@@ -592,7 +709,7 @@ def delete_picture():
     /database/addItem
     INPUT:
     'id_token': JWT token given by user 
-    'photo_id': The name of the photo
+    'image_id': The name of the photo
     'data': The bounding box data 
 
     PURPOSE:
@@ -603,7 +720,7 @@ def delete_picture():
 def add_item():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
-        photo_id = request.form['photo_id'].strip()
+        image_id = request.form['image_id'].strip()
         data = json.loads(request.form['data'].strip())
 
         print(data)
@@ -614,11 +731,11 @@ def add_item():
         uid = user["uid"]
 
         # Gets photo by 
-        photo_ref = db.collection('users').document(uid).collection("photos").document(photo_id)
+        photo_ref = db.collection('users').document(uid).collection("photos").document(image_id)
         doc = photo_ref.get()
 
         if not doc.exists:
-            return jsonify({"failure": "Picture doesn't exist or user doesn't own photo"})
+            return jsonify({"error": "Imgture doesn't exist or user doesn't own photo"})
  
         new_json = doc.to_dict() 
         new_json['multi'].append(data)
@@ -654,20 +771,20 @@ def predict():
 
                 for material in mat:
     
-                    if material == "Picture of Plastic":
-                        top_predictions = [i for i in top_predictions if i["Material"]!="Picture of Plastic"]
+                    if material == "Imgture of Plastic":
+                        top_predictions = [i for i in top_predictions if i["Material"]!="Imgture of Plastic"]
                         categorize(img, plastics, top_predictions)
                     
-                    if material == "Picture of Paper":
-                        top_predictions = [i for i in top_predictions if i["Material"]!="Picture of Paper"]
+                    if material == "Imgture of Paper":
+                        top_predictions = [i for i in top_predictions if i["Material"]!="Imgture of Paper"]
                         categorize(img, papers, top_predictions)
                     
-                    if material == "Picture of Glass":
-                        top_predictions = [i for i in top_predictions if i["Material"]!="Picture of Glass"]
+                    if material == "Imgture of Glass":
+                        top_predictions = [i for i in top_predictions if i["Material"]!="Imgture of Glass"]
                         categorize(img, glasses, top_predictions)
                     
-                    if material == "Picture of Cardboard":
-                        top_predictions = [i for i in top_predictions if i["Material"]!="Picture of Cardboard"]
+                    if material == "Imgture of Cardboard":
+                        top_predictions = [i for i in top_predictions if i["Material"]!="Imgture of Cardboard"]
                         categorize(img, cardBoards, top_predictions)
                 
                 temp = []
@@ -683,4 +800,5 @@ def predict():
     return jsonify({'error': 'not POST request'})
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8081)))
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+
