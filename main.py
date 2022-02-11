@@ -13,9 +13,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import auth
-import base64
 import datetime
-import requests
 import googlemaps
 storage_client = storage.Client()
 
@@ -300,15 +298,14 @@ def reverse_geolocation():
 @app.route('/database/createTrashcanCoords', methods=['POST'])   
 def create_trashcan_coords():
     if request.method == 'POST':
-        data = json.loads(request.form['data'].strip())
         id_token = request.form['id_token'].strip()
         image = request.form['image_base64'].strip()
         
-        image_id = data['image_id']
-        latitude = data['latitude']
-        longitude = data['longitude']
-        recycling_types = data['recycling_types']
-        date = data['date_taken']
+        image_id = request.form['image_id'].strip()
+        latitude = request.form['latitude'].strip()
+        longitude = request.form['longitude'].strip()
+        recycling_types = request.form['recyling_types'].strip()
+        date = request.form['date_taken'].strip()
 
         # Gets location data from coordinates
         location_data = extract_location_data(latitude, longitude) 
@@ -622,14 +619,10 @@ def get_picture():
         if not doc.exists:
             return jsonify({'error': "Imgture doesn't exist for this user"})
         
-        # If meta flag is true it only downloads meta data and not the photo
-        if (meta_flag == False):
-            picture = download_blob_into_memory("greenday-user-photos", image_id)['picture']
-        else:
-            picture = generate_download_signed_url_v4('greenday-user-photos', image_id)
+        picture = download_blob_into_memory('greenday-user-photos', image_id)['picture']
 
         return jsonify({
-            "success:":{
+            "success":{
                 "photo": str(picture),
                 "photo-meta": doc.to_dict()
             }
