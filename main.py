@@ -482,6 +482,20 @@ def get_trashcan():
     else:
         return jsonify({"error": "not POST request"})
 
+@app.route('/database/queryTrashcanLocation', methods=['POST'])
+def get_trashcan_location():
+    if request.method == 'POST':
+        id_token = request.form['id_token'].strip()
+        latitude = request.form['latitude'].strip()
+        longitude = request.form['longitude'].strip()
+
+        data = extract_location_data(latitude, longitude)
+
+        pass
+    else:
+        return jsonify({"error": "not POST request"})
+
+
 
 """
     /database/createUser [POST]
@@ -733,12 +747,12 @@ def delete_picture():
         photo = photo_ref.get()
 
         if not photo.exists:
-            return jsonify({"error": "Imgture doesn't exist or user doesn't own photo"})
+            return jsonify({"error": "Picture doesn't exist or user doesn't own photo"})
 
         photo_ref.delete()
         delete_blob("greenday-user-photos", image_id)
 
-        return jsonify({'success': "Imgture was deleted"})
+        return jsonify({'success': "Picture was deleted"})
     else:
         return jsonify({'error': 'not DELETE request'})
 
