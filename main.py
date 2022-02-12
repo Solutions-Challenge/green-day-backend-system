@@ -67,7 +67,6 @@ def generate_download_signed_url_v4(bucket_name, blob_name):
 
     return url
 
-
 def upload_blob_from_memory(bucket_name, contents, destination_blob_name):
     """Uploads a file to the bucket."""
 
@@ -87,7 +86,6 @@ def upload_blob_from_memory(bucket_name, contents, destination_blob_name):
     blob.upload_from_string(contents)
 
     return "{} with contents uploaded to {}.".format(destination_blob_name, bucket_name)
-
 
 def download_blob_into_memory(bucket_name, blob_name):
     """Downloads a blob into memory."""
@@ -110,7 +108,6 @@ def download_blob_into_memory(bucket_name, blob_name):
 
     return {"picture": contents, "success": "Downloaded storage object {} from bucket {}.".format(blob_name, bucket_name)}
 
-
 def delete_blob(bucket_name, blob_name):
     """Deletes a blob from the bucket."""
     # bucket_name = "your-bucket-name"
@@ -124,19 +121,16 @@ def delete_blob(bucket_name, blob_name):
 
     return "Blob {} deleted.".format(blob_name)
 
-
 def blob_exists(bucket_name, filename):
     bucket = storage_client.get_bucket(bucket_name)
     blob = bucket.blob(filename)
     return blob.exists()
-
 
 def user_exists(user_id):
     user_ref = db.collection('users').document(user_id)
     user_exist = user_ref.get()
 
     return user_exist
-
 
 def delete_collection(coll_ref, batch_size):
     docs = coll_ref.limit(batch_size).stream()
@@ -150,14 +144,12 @@ def delete_collection(coll_ref, batch_size):
     if deleted >= batch_size:
         return delete_collection(coll_ref, batch_size)
 
-
 def verify_user(id_token):
     try:
         decoded_token = auth.verify_id_token(id_token)
     except:
         return False
     return decoded_token
-
 
 def most_frequent(List):
     if List == []:
@@ -172,7 +164,6 @@ def most_frequent(List):
             num = i
 
     return num
-
 
 """
     INPUT:
@@ -189,8 +180,6 @@ def most_frequent(List):
     PURPOSE:
     Returns a normalized global address system so we can effectively partition our data
 """
-
-
 def extract_location_data(latitude, longitude):
     addresses = gmaps.reverse_geocode((latitude, longitude))
 
@@ -242,7 +231,6 @@ def extract_location_data(latitude, longitude):
         "locality": locality
     }
 
-
 """
     INPUT:
     latitude: X coordinate
@@ -261,8 +249,6 @@ def extract_location_data(latitude, longitude):
     Relative Size
     postcode ~ locality < admin2 < admin1 < counttry
 """
-
-
 @app.route('/location/reverseGeolocation', methods=['POST'])
 def reverse_geolocation():
     latitude = float(request.form['latitude'].strip())
@@ -271,14 +257,12 @@ def reverse_geolocation():
 
     return jsonify({"success": geolocation})
 
-
 @app.route('/database/addOpinion', methods=['POST'])
 def add_recyling_opinions():
     if request.method == 'POST':
         pass
     else:
         return jsonify
-
 
 """
     INPUT:
@@ -298,8 +282,6 @@ def add_recyling_opinions():
     Relative Size
     postcode ~ locality < admin2 < admin1 < country
 """
-
-
 @app.route('/database/createTrashcanCoords', methods=['POST'])
 def create_trashcan_coords():
     if request.method == 'POST':
@@ -385,8 +367,17 @@ def create_trashcan_coords():
     else:
         return jsonify({'error': 'not POST request'})
 
+"""
+    INPUT:
+    id_token: The JWT token given by the user
 
-@app.route('/database/getTrashcanKeys', methods=['POST'])
+    PURPOSE:
+    Gets all trashcans that were taken by the user
+
+    Output:
+    The image_ids of every trashcan the user owns
+"""
+@app.route('/database/getUserOwnedTrashcans', methods=['POST'])
 def get_trashcan_keys():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
@@ -410,7 +401,6 @@ def get_trashcan_keys():
     else:
         return jsonify({"error": "not POST request"})
 
-
 """
     INPUT:
     id_token: JWT token 
@@ -419,8 +409,6 @@ def get_trashcan_keys():
     PURPOSE:
     Deletes trashcan from location, user, and trashcan, and photo databases
 """
-
-
 @app.route('/database/deleteTrashcan', methods=['DELETE'])
 def delete_trashcan():
     if request.method == 'DELETE':
@@ -452,7 +440,6 @@ def delete_trashcan():
         return jsonify({"success": '{} deleted'.format(image_id)})
     else:
         return jsonify({"error": "not DELETE request"})
-
 
 @app.route('/database/getTrashcan', methods=['POST'])
 def get_trashcan():
