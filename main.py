@@ -120,6 +120,12 @@ def blob_exists(bucket_name, filename):
    blob = bucket.blob(filename)
    return blob.exists()
 
+def user_exists(user_id):
+    user_ref = db.collection('users').document(user_id)
+    user_exist = user_ref.get()
+
+    return user_exist
+
 # as a percentage
 MARGIN_OF_ERROR=0.1
 
@@ -284,7 +290,6 @@ def add_recyling_opinions():
     else:
         return jsonify
     
-
 """
     INPUT:
     latitude: X coordinate
@@ -385,6 +390,29 @@ def create_trashcan_coords():
         return jsonify({'success': string})
     else:
         return jsonify({'error': 'not POST request'})
+
+@app.route('/database/getTrashcanKeys', methods=['POST'])   
+def get_trashcan_keys():
+    if request.method == 'POST':
+        id_token = request.form['id_token'].strip()
+
+        user = verify_user(id_token)
+        if (user == False):
+            return jsonify({"error": "Auth token is invalid"})
+        uid = user['uid']
+        
+        if not user_exists(uid):
+            return jsonify({"error": "user entry not created in database"})
+        
+        trashcans = db.collection('users').document(uid).collection('owned_trashcans').stream()
+        trashcan_ids = []
+        
+        for trashcan in trashcans:
+            trashcan_ids.append(trashcan.id)
+
+        return jsonify({"success": trashcan_ids})
+    else:
+        return jsonify({"error": "not POST request"})
 
 """
     INPUT:
