@@ -28,16 +28,16 @@ app = Flask(__name__)
 
 CORS(app)
 
-materials = ["Imgture of a Wooden Object", "Imgture of a Metallic Object", "Imgture of Plastic", "Imgture of Cardboard", "Imgture of Paper", "Imgture of Glass",
-             "Imgture of an Electronic device", "Imgture of a Human", "Imgture of Rubber or Latex Gloves", "Imgture of an Animal", "Imgture of a Plant"]
-plastics = ["Imgture of Styrofoam", "Imgture of Plastic Bag",
-            "Imgture of a Plastic Wrapper or Plastic Film", "Imgture of Bubble Wrap"]
-papers = ["Imgture of Shredded Paper",
-          "Imgture of Soiled Paper", "Imgture of Clean Paper"]
-glasses = ["Imgture of Broken Glass",
-           "Imgture of Ceramic", "Imgture of Glassware"]
-cardBoards = ["Imgture of Cardboard which doesn't contain food",
-              "Imgture of a Cardboard which contains pizza"]
+materials = ["Picture of a Wooden Object", "Picture of a Metallic Object", "Picture of Plastic", "Picture of Cardboard", "Picture of Paper", "Picture of Glass",
+             "Picture of an Electronic device", "Picture of a Human", "Picture of Rubber or Latex Gloves", "Picture of an Animal", "Picture of a Plant"]
+plastics = ["Picture of Styrofoam", "Picture of Plastic Bag",
+            "Picture of a Plastic Wrapper or Plastic Film", "Picture of Bubble Wrap"]
+papers = ["Picture of Shredded Paper",
+          "Picture of Soiled Paper", "Picture of Clean Paper"]
+glasses = ["Picture of Broken Glass",
+           "Picture of Ceramic", "Picture of Glassware"]
+cardBoards = ["Picture of Cardboard which doesn't contain food",
+              "Picture of a Cardboard which contains pizza"]
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
@@ -173,8 +173,9 @@ def most_frequent(List):
     {
         "subsection-2": level 2 admin zone if exists else post-code else admin 1 zone,
         "subsection-1": level 1 admin zone,
-        "postcode": code,
+        "postcode": the global postal code of coordinates,
         "country": country
+        "locality": Town or city equivalent
     }
 
     PURPOSE:
@@ -222,13 +223,15 @@ def extract_location_data(latitude, longitude):
     country = most_frequent(country)
     code = most_frequent(code)
     locality = most_frequent(locality)
+    if country == None:
+        return None
 
     return {
-        "admin2": admin2 if admin2 != None else sub2,
-        "admin1": admin1 if admin1 != None else sub1,
-        "postcode": code,
-        "country": country,
-        "locality": locality
+        "admin2": admin2.lower() if admin2 != None else sub2.lower(),
+        "admin1": admin1.lower() if admin1 != None else sub1.lower(),
+        "postcode": code.lower(),
+        "country": country.lower(),
+        "locality": locality.lower()
     }
 
 """
@@ -300,14 +303,11 @@ def create_trashcan_coords():
         uid = user['uid']
 
         # Gets location data from coordinates
-        location_data = extract_location_data(latitude, longitude)
-
         # If country is valid then continue otherwise return error
-        try:
-            country = location_data['country'].lower()
-        except:
+        location_data = extract_location_data(latitude, longitude)
+        if location_data == None:
             return jsonify({"error": "Country not found. Coordinates may be invalid"})
-
+            
         if blob_exists("trashcan_images", image_id):
             return jsonify({"error": "Photo ID in use"})
 
@@ -483,15 +483,37 @@ def get_trashcan():
         return jsonify({"error": "not POST request"})
 
 @app.route('/database/queryTrashcanLocation', methods=['POST'])
-def get_trashcan_location():
+def query_trashcan_location():
     if request.method == 'POST':
-        id_token = request.form['id_token'].strip()
         latitude = request.form['latitude'].strip()
         longitude = request.form['longitude'].strip()
+        radius = 10
+        # So I don't have to calculate that pesky square root
+        radius *= radius
 
-        data = extract_location_data(latitude, longitude)
+        location_data = extract_location_data(latitude, longitude)
+        if location_data == None:
+            return jsonify({"error": "Country not found. Coordinates may be invalid"})
+            
+        postcode = location_data['postcode']
+        country = location_data['country']
+        trashcan_list = db.collection('location_data').document(country).collection('postal_codes').document(postcode).collection("trashcans").stream()
+        trashcans = []
+        for trashcan in trashcan_list:
+            loc_data = trashcan.to_dict()
+            x1 = float(latitude)
+            x2 = float(loc_data['latitude'])
+            y1 = float(longitude)
+            y2 = float(loc_data['longitude'])
+            ys = y2 - y1 
+            xs = x2 - x1 
+            if radius < (ys * ys + xs * xs):
+                continue
 
-        pass
+            trashcans.append(trashcan.id)
+            #trash_ref = trashcan.to_dict()['ref'].get().to_dict()
+            
+        return jsonify({"Success":trashcans})
     else:
         return jsonify({"error": "not POST request"})
 
@@ -516,11 +538,6 @@ def create_user():
         user = verify_user(id_token)
         if not user:
             return jsonify({'error': "ID token is invalid"})
-
-        new_user = auth.get_user(user['uid'])
-        data = {
-            'email': new_user.email
-        }
 
         docref = db.collection(u'users').document(user['uid'])
 
@@ -668,7 +685,7 @@ def get_picture():
         # Check if image_id entry exists
         doc = docref.get()
         if not doc.exists:
-            return jsonify({'error': "Imgture doesn't exist for this user"})
+            return jsonify({'error': "Picture doesn't exist for this user"})
 
         picture = download_blob_into_memory(
             'greenday-user-photos', image_id)['picture']
@@ -791,7 +808,7 @@ def add_item():
         doc = photo_ref.get()
 
         if not doc.exists:
-            return jsonify({"error": "Imgture doesn't exist or user doesn't own photo"})
+            return jsonify({"error": "Picture doesn't exist or user doesn't own photo"})
 
         new_json = doc.to_dict()
         new_json['multi'].append(data)
@@ -913,4 +930,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8081)))
