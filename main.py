@@ -17,7 +17,8 @@ import datetime
 import googlemaps
 storage_client = storage.Client()
 
-cred = credentials.Certificate("greenday-6aba2-firebase-adminsdk-wppee-88cc844ed3.json")
+cred = credentials.Certificate(
+    "greenday-6aba2-firebase-adminsdk-wppee-88cc844ed3.json")
 firebase_admin.initialize_app(cred)
 gmaps = googlemaps.Client(key="AIzaSyAVR75_hunpkE3V1kbcJXfKHt1D2B3YgQs")
 
@@ -27,14 +28,20 @@ app = Flask(__name__)
 
 CORS(app)
 
-materials = ["Imgture of a Wooden Object", "Imgture of a Metallic Object", "Imgture of Plastic", "Imgture of Cardboard", "Imgture of Paper", "Imgture of Glass", "Imgture of an Electronic device", "Imgture of a Human", "Imgture of Rubber or Latex Gloves", "Imgture of an Animal", "Imgture of a Plant"]
-plastics = ["Imgture of Styrofoam", "Imgture of Plastic Bag", "Imgture of a Plastic Wrapper or Plastic Film", "Imgture of Bubble Wrap"]
-papers = ["Imgture of Shredded Paper", "Imgture of Soiled Paper", "Imgture of Clean Paper"]
-glasses = ["Imgture of Broken Glass", "Imgture of Ceramic", "Imgture of Glassware"]
-cardBoards = ["Imgture of Cardboard which doesn't contain food", "Imgture of a Cardboard which contains pizza"]
+materials = ["Imgture of a Wooden Object", "Imgture of a Metallic Object", "Imgture of Plastic", "Imgture of Cardboard", "Imgture of Paper", "Imgture of Glass",
+             "Imgture of an Electronic device", "Imgture of a Human", "Imgture of Rubber or Latex Gloves", "Imgture of an Animal", "Imgture of a Plant"]
+plastics = ["Imgture of Styrofoam", "Imgture of Plastic Bag",
+            "Imgture of a Plastic Wrapper or Plastic Film", "Imgture of Bubble Wrap"]
+papers = ["Imgture of Shredded Paper",
+          "Imgture of Soiled Paper", "Imgture of Clean Paper"]
+glasses = ["Imgture of Broken Glass",
+           "Imgture of Ceramic", "Imgture of Glassware"]
+cardBoards = ["Imgture of Cardboard which doesn't contain food",
+              "Imgture of a Cardboard which contains pizza"]
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
+
 
 def generate_download_signed_url_v4(bucket_name, blob_name):
     """Generates a v4 signed URL for downloading a blob.
@@ -60,6 +67,7 @@ def generate_download_signed_url_v4(bucket_name, blob_name):
 
     return url
 
+
 def upload_blob_from_memory(bucket_name, contents, destination_blob_name):
     """Uploads a file to the bucket."""
 
@@ -78,8 +86,8 @@ def upload_blob_from_memory(bucket_name, contents, destination_blob_name):
 
     blob.upload_from_string(contents)
 
-     
     return "{} with contents uploaded to {}.".format(destination_blob_name, bucket_name)
+
 
 def download_blob_into_memory(bucket_name, blob_name):
     """Downloads a blob into memory."""
@@ -102,6 +110,7 @@ def download_blob_into_memory(bucket_name, blob_name):
 
     return {"picture": contents, "success": "Downloaded storage object {} from bucket {}.".format(blob_name, bucket_name)}
 
+
 def delete_blob(bucket_name, blob_name):
     """Deletes a blob from the bucket."""
     # bucket_name = "your-bucket-name"
@@ -115,10 +124,12 @@ def delete_blob(bucket_name, blob_name):
 
     return "Blob {} deleted.".format(blob_name)
 
+
 def blob_exists(bucket_name, filename):
-   bucket = storage_client.get_bucket(bucket_name)
-   blob = bucket.blob(filename)
-   return blob.exists()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(filename)
+    return blob.exists()
+
 
 def user_exists(user_id):
     user_ref = db.collection('users').document(user_id)
@@ -126,37 +137,6 @@ def user_exists(user_id):
 
     return user_exist
 
-# as a percentage
-MARGIN_OF_ERROR=0.1
-
-ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'json']
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def categorize(img, types, top_predictions):
-    image = preprocess(img).unsqueeze(0).to(device)
-    text = clip.tokenize(types).to(device)
-    with torch.no_grad():
-
-        logits_per_image, logits_per_text = model(image, text)
-        probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-
-    largestProbIndex = np.argmax(probs[0])
-    
-    ans = [largestProbIndex]
-    for i in range(len(probs[0])):
-        if i != largestProbIndex:
-            if probs[0][largestProbIndex] - probs[0][i] < MARGIN_OF_ERROR:
-                ans.append(i)
-
-    mats = []
-    for x in ans:
-        top_predictions.append({
-            "Material": types[x],
-            "percentage": probs[0][x]
-        })
-        mats.append(types[x])    
-    return mats
 
 def delete_collection(coll_ref, batch_size):
     docs = coll_ref.limit(batch_size).stream()
@@ -170,6 +150,7 @@ def delete_collection(coll_ref, batch_size):
     if deleted >= batch_size:
         return delete_collection(coll_ref, batch_size)
 
+
 def verify_user(id_token):
     try:
         decoded_token = auth.verify_id_token(id_token)
@@ -177,19 +158,21 @@ def verify_user(id_token):
         return False
     return decoded_token
 
+
 def most_frequent(List):
     if List == []:
         return None
     counter = 0
     num = List[0]
-     
+
     for i in List:
         curr_frequency = List.count(i)
-        if(curr_frequency> counter):
+        if(curr_frequency > counter):
             counter = curr_frequency
             num = i
- 
+
     return num
+
 
 """
     INPUT:
@@ -206,9 +189,11 @@ def most_frequent(List):
     PURPOSE:
     Returns a normalized global address system so we can effectively partition our data
 """
+
+
 def extract_location_data(latitude, longitude):
     addresses = gmaps.reverse_geocode((latitude, longitude))
-    
+
     sub1 = []
     sub2 = []
     admin1 = []
@@ -239,16 +224,16 @@ def extract_location_data(latitude, longitude):
                 code.append(t['long_name'])
             if "locality" in t['types']:
                 #print('code', t['long_name'])
-                locality.append(t['long_name'])    
+                locality.append(t['long_name'])
 
-    sub1 = most_frequent(sub1) 
+    sub1 = most_frequent(sub1)
     sub2 = most_frequent(sub2)
-    admin1 = most_frequent(admin1) 
+    admin1 = most_frequent(admin1)
     admin2 = most_frequent(admin2)
     country = most_frequent(country)
     code = most_frequent(code)
     locality = most_frequent(locality)
-    
+
     return {
         "admin2": admin2 if admin2 != None else sub2,
         "admin1": admin1 if admin1 != None else sub1,
@@ -256,6 +241,7 @@ def extract_location_data(latitude, longitude):
         "country": country,
         "locality": locality
     }
+
 
 """
     INPUT:
@@ -275,21 +261,25 @@ def extract_location_data(latitude, longitude):
     Relative Size
     postcode ~ locality < admin2 < admin1 < counttry
 """
-@app.route('/location/reverseGeolocation', methods=['POST'])   
+
+
+@app.route('/location/reverseGeolocation', methods=['POST'])
 def reverse_geolocation():
     latitude = float(request.form['latitude'].strip())
     longitude = float(request.form['longitude'].strip())
     geolocation = gmaps.reverse_geocode((latitude, longitude))
-    
+
     return jsonify({"success": geolocation})
 
-@app.route('/database/addOpinion', methods=['POST'])   
+
+@app.route('/database/addOpinion', methods=['POST'])
 def add_recyling_opinions():
     if request.method == 'POST':
         pass
     else:
         return jsonify
-    
+
+
 """
     INPUT:
     latitude: X coordinate
@@ -308,12 +298,14 @@ def add_recyling_opinions():
     Relative Size
     postcode ~ locality < admin2 < admin1 < country
 """
-@app.route('/database/createTrashcanCoords', methods=['POST'])   
+
+
+@app.route('/database/createTrashcanCoords', methods=['POST'])
 def create_trashcan_coords():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
         image = request.form['image_base64'].strip()
-        
+
         image_id = request.form['image_id'].strip()
         latitude = request.form['latitude'].strip()
         longitude = request.form['longitude'].strip()
@@ -326,7 +318,7 @@ def create_trashcan_coords():
         uid = user['uid']
 
         # Gets location data from coordinates
-        location_data = extract_location_data(latitude, longitude) 
+        location_data = extract_location_data(latitude, longitude)
 
         # If country is valid then continue otherwise return error
         try:
@@ -340,7 +332,7 @@ def create_trashcan_coords():
         # Get the user ref and check if it exists
         user_ref = db.collection('users').document(uid)
         user_doc = user_ref.get()
-        if not user_doc.exists: 
+        if not user_doc.exists:
             return jsonify({"error": "User does not exist"})
 
         # Refers to trashcan database where photo id and othe refs are stored
@@ -353,24 +345,26 @@ def create_trashcan_coords():
         if location_key == None:
             location_key = location_data['admin2'].lower()
 
-
         # Gets the level 2 admin zone and sets the key to zip code or level 2 admin zone name
-        location_ref = db.collection(u'location_data').document(country).collection("postal_codes").document(location_key)
+        location_ref = db.collection(u'location_data').document(
+            country).collection("postal_codes").document(location_key)
         # Helps me know where the postal code is
         location_ref.set({
             "locality": locality
         })
 
         # Sets the trashcan location data
-        trashcan_location_ref = location_ref.collection("trashcans").document(image_id)
+        trashcan_location_ref = location_ref.collection(
+            "trashcans").document(image_id)
         trashcan_location_ref.set({
             'latitude': latitude,
             'longitude': longitude,
             'ref': trashcanref
         })
 
-        # Where the user owned trashcan ref exists    
-        user_trashcans_ref = db.collection('users').document(uid).collection('owned_trashcans').document(image_id)
+        # Where the user owned trashcan ref exists
+        user_trashcans_ref = db.collection('users').document(
+            uid).collection('owned_trashcans').document(image_id)
         user_trashcans_ref.set({
             'user_ref': trashcanref
         })
@@ -391,7 +385,8 @@ def create_trashcan_coords():
     else:
         return jsonify({'error': 'not POST request'})
 
-@app.route('/database/getTrashcanKeys', methods=['POST'])   
+
+@app.route('/database/getTrashcanKeys', methods=['POST'])
 def get_trashcan_keys():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
@@ -400,19 +395,21 @@ def get_trashcan_keys():
         if (user == False):
             return jsonify({"error": "Auth token is invalid"})
         uid = user['uid']
-        
+
         if not user_exists(uid):
             return jsonify({"error": "user entry not created in database"})
-        
-        trashcans = db.collection('users').document(uid).collection('owned_trashcans').stream()
+
+        trashcans = db.collection('users').document(
+            uid).collection('owned_trashcans').stream()
         trashcan_ids = []
-        
+
         for trashcan in trashcans:
             trashcan_ids.append(trashcan.id)
 
         return jsonify({"success": trashcan_ids})
     else:
         return jsonify({"error": "not POST request"})
+
 
 """
     INPUT:
@@ -422,23 +419,25 @@ def get_trashcan_keys():
     PURPOSE:
     Deletes trashcan from location, user, and trashcan, and photo databases
 """
-@app.route('/database/deleteTrashcan', methods=['DELETE'])   
+
+
+@app.route('/database/deleteTrashcan', methods=['DELETE'])
 def delete_trashcan():
     if request.method == 'DELETE':
         id_token = request.form['id_token'].strip()
         image_id = request.form['image_id'].strip()
         user = verify_user(id_token)
-        
+
         if (user == False):
             return jsonify({"error": "Auth token is invalid"})
-        
+
         doc_ref = db.collection('trashcans').document(image_id)
 
         data = doc_ref.get()
 
         if not data.exists:
             return jsonify({"error:": "Data does not exist"})
- 
+
         data = data.to_dict()
         if user['uid'] != data['user']:
             return jsonify({"error:": "User doesn't own trashcan"})
@@ -454,22 +453,23 @@ def delete_trashcan():
     else:
         return jsonify({"error": "not DELETE request"})
 
-@app.route('/database/getTrashcan', methods=['POST'])   
+
+@app.route('/database/getTrashcan', methods=['POST'])
 def get_trashcan():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
         image_id = request.form['image_id'].strip()
         doc_ref = db.collection('trashcans').document(image_id)
         user = verify_user(id_token)
-        
+
         if (user == False):
             return jsonify({"error": "Auth token is invalid"})
-        
+
         data = doc_ref.get()
 
         if not data.exists:
             return jsonify({"error:": "Data does not exist"})
- 
+
         data = data.to_dict()
 
         if user['uid'] != data['user']:
@@ -479,7 +479,7 @@ def get_trashcan():
         loc_ref_data = loc_ref.get().to_dict()
         latitude = loc_ref_data['latitude']
         longitude = loc_ref_data['longitude']
-        
+
         recycling_types = data['recycling_types']
         image_base64 = download_blob_into_memory('trashcan_images', image_id)
         date = data['date_taken']
@@ -495,6 +495,7 @@ def get_trashcan():
     else:
         return jsonify({"error": "not POST request"})
 
+
 """
     /database/createUser [POST]
     INPUT:
@@ -504,7 +505,9 @@ def get_trashcan():
     Creates a user entry in firebase
     
 """
-@app.route('/database/createUser', methods=['POST'])   
+
+
+@app.route('/database/createUser', methods=['POST'])
 def create_user():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
@@ -512,14 +515,14 @@ def create_user():
         user = verify_user(id_token)
         if not user:
             return jsonify({'error': "ID token is invalid"})
-        
+
         new_user = auth.get_user(user['uid'])
         data = {
             'email': new_user.email
         }
 
         docref = db.collection(u'users').document(user['uid'])
-        
+
         doc = docref.get()
 
         if doc.exists:
@@ -530,6 +533,7 @@ def create_user():
     else:
         return jsonify({'error': 'not POST request'})
 
+
 """
     /database/deleteUser [DELETE]
     INPUT:
@@ -539,11 +543,13 @@ def create_user():
     Delete user from database and all photos associated with account
 
 """
+
+
 @app.route('/database/deleteUser', methods=['DELETE'])
 def delete_user_data():
     if request.method == "DELETE":
         id_token = request.form['id_token'].strip()
-        
+
         user = verify_user(id_token)
         if not user:
             return jsonify({'error': "ID token is invalid"})
@@ -551,7 +557,7 @@ def delete_user_data():
 
         photo_ref = db.collection('users').document(uid).collection("photos")
         user_ref = db.collection('users').document(uid)
-        
+
         user_doc = user_ref.get()
 
         if not user_doc.exists:
@@ -568,7 +574,6 @@ def delete_user_data():
 
         delete_collection(user_ref.collection('photos'), 1000)
         user_ref.delete()
-        
 
         return jsonify({'success': {
             'code': 'User data was deleted and {} photo(s) deleted'.format(len(array)),
@@ -576,6 +581,7 @@ def delete_user_data():
         }})
     else:
         return jsonify({'error': 'not DELETE request'})
+
 
 """
     // THIS DOESN'T CHECK IF DATA IS CORRECTLY FORMATTED
@@ -589,6 +595,8 @@ def delete_user_data():
     Adds a picture to user entry in firebase and google cloud storage along with metadata
 
 """
+
+
 @app.route('/database/addImg', methods=['POST'])
 def add_picture():
     if request.method == "POST":
@@ -609,13 +617,15 @@ def add_picture():
             return jsonify({"error": "Photo already exists within database"})
 
         # users/user/photos/image_id/metadata
-        db.collection('users').document(uid).collection("photos").document(image_id).set(data)
+        db.collection('users').document(uid).collection(
+            "photos").document(image_id).set(data)
 
         string = upload_blob_from_memory(bucket_name, image, image_id)
-        
-        return jsonify({"success":string})
+
+        return jsonify({"success": string})
     else:
         return jsonify({'error': 'not POST request'})
+
 
 """
     /database/getImg [POST]
@@ -628,17 +638,19 @@ def add_picture():
     Returns the base64 encoding of photo and json with metadata
 
 """
+
+
 @app.route('/database/getImg', methods=['POST'])
 def get_picture():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
         image_id = request.form['image_id'].strip()
         meta_flag = request.form['meta_flag'].strip()
-        
+
         if meta_flag.lower() == "false":
-            meta_flag = False 
-        elif meta_flag.lower() == 'true': 
-            meta_flag = True 
+            meta_flag = False
+        elif meta_flag.lower() == 'true':
+            meta_flag = True
         else:
             meta_flag = False
 
@@ -649,23 +661,26 @@ def get_picture():
         uid = user["uid"]
 
         # users/user/photos/image_id/metadata
-        docref = db.collection('users').document(uid).collection("photos").document(image_id)
-        
+        docref = db.collection('users').document(
+            uid).collection("photos").document(image_id)
+
         # Check if image_id entry exists
         doc = docref.get()
         if not doc.exists:
             return jsonify({'error': "Imgture doesn't exist for this user"})
-        
-        picture = download_blob_into_memory('greenday-user-photos', image_id)['picture']
+
+        picture = download_blob_into_memory(
+            'greenday-user-photos', image_id)['picture']
 
         return jsonify({
-            "success":{
+            "success": {
                 "photo": str(picture),
                 "photo-meta": doc.to_dict()
             }
         })
     else:
         return jsonify({'error': 'not POST request'})
+
 
 """
     /database/getImgKeys [GET]
@@ -676,6 +691,8 @@ def get_picture():
     Returns all image_ids associated with user account
 
 """
+
+
 @app.route('/database/getImgKeys', methods=['POST'])
 def get_picture_keys():
     if request.method == "POST":
@@ -688,14 +705,15 @@ def get_picture_keys():
 
         docref = db.collection('users').document(uid).collection("photos")
         docs = docref.stream()
-        
+
         array = []
         for doc in docs:
             array.append(doc.id)
-        
+
         return jsonify({'success': array})
-    else: 
+    else:
         return jsonify({'error': 'not POST request'})
+
 
 """
     //THIS DOESNT CHECK IF DATA IS VALID OR NOT
@@ -709,6 +727,8 @@ def get_picture_keys():
     Deletes a picture from user database entry and user photos if photo is associated with account
 
 """
+
+
 @app.route('/database/deleteImg', methods=['DELETE'])
 def delete_picture():
     if request.method == 'DELETE':
@@ -720,19 +740,21 @@ def delete_picture():
             return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
-        photo_ref = db.collection('users').document(uid).collection("photos").document(image_id)
-        
+        photo_ref = db.collection('users').document(
+            uid).collection("photos").document(image_id)
+
         photo = photo_ref.get()
 
         if not photo.exists:
             return jsonify({"error": "Imgture doesn't exist or user doesn't own photo"})
-        
+
         photo_ref.delete()
         delete_blob("greenday-user-photos", image_id)
 
         return jsonify({'success': "Imgture was deleted"})
     else:
-        return jsonify({'error': 'not DELETE request'}) 
+        return jsonify({'error': 'not DELETE request'})
+
 
 """
     //THIS DOESNT CHECK IF DATA IS VALID OR NOT
@@ -746,6 +768,8 @@ def delete_picture():
     This adds a json to the MULTI array which holds data for bounding boxes
 
 """
+
+
 @app.route('/database/addItem', methods=['POST'])
 def add_item():
     if request.method == "POST":
@@ -760,14 +784,15 @@ def add_item():
             return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
-        # Gets photo by 
-        photo_ref = db.collection('users').document(uid).collection("photos").document(image_id)
+        # Gets photo by
+        photo_ref = db.collection('users').document(
+            uid).collection("photos").document(image_id)
         doc = photo_ref.get()
 
         if not doc.exists:
             return jsonify({"error": "Imgture doesn't exist or user doesn't own photo"})
- 
-        new_json = doc.to_dict() 
+
+        new_json = doc.to_dict()
         new_json['multi'].append(data)
         photo_ref.set(new_json)
 
@@ -775,9 +800,60 @@ def add_item():
     else:
         return jsonify({'error': 'not GET request'})
 
+
 @app.route('/mapData', methods=['GET'])
 def getData():
     return jsonify({'success': mapData})
+
+
+materials = ["Picture of a Wooden Object", "Picture of a Metallic Object", "Picture of Plastic", "Picture of Cardboard", "Picture of Paper", "Picture of Glass",
+             "Picture of an Electronic device", "Picture of a Human", "Picture of Rubber or Latex Gloves", "Picture of an Animal", "Picture of a Plant"]
+plastics = ["Picture of Styrofoam", "Picture of Plastic Bag",
+            "Picture of a Plastic Wrapper or Plastic Film", "Picture of Bubble Wrap"]
+papers = ["Picture of Shredded Paper",
+          "Picture of Soiled Paper", "Picture of Clean Paper"]
+glasses = ["Picture of Broken Glass",
+           "Picture of Ceramic", "Picture of Glassware"]
+cardBoards = ["Picture of Cardboard which doesn't contain food",
+              "Picture of a Cardboard which contains pizza"]
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model, preprocess = clip.load("ViT-B/32", device=device)
+
+# as a percentage
+MARGIN_OF_ERROR = 0.1
+
+ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg']
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def categorize(img, types, top_predictions):
+    image = preprocess(img).unsqueeze(0).to(device)
+    text = clip.tokenize(types).to(device)
+    with torch.no_grad():
+
+        logits_per_image, logits_per_text = model(image, text)
+        probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+
+    largestProbIndex = np.argmax(probs[0])
+
+    ans = [largestProbIndex]
+    for i in range(len(probs[0])):
+        if i != largestProbIndex:
+            if probs[0][largestProbIndex] - probs[0][i] < MARGIN_OF_ERROR:
+                ans.append(i)
+
+    mats = []
+    for x in ans:
+        top_predictions.append({
+            "Material": types[x],
+            "percentage": probs[0][x]
+        })
+        mats.append(types[x])
+    return mats
 
 
 @app.route('/predict', methods=['POST'])
@@ -785,37 +861,43 @@ def predict():
     if request.method == "POST":
         files = request.files.getlist('files[]')
 
+        ans = []
+
         for file in files:
             top_predictions = []
             if file is None or file.filename == "":
                 return jsonify({'error': 'no file found'})
             if not allowed_file(file.filename):
                 return jsonify({'error': 'format not supported'})
-            
+
             try:
-                
+
                 img = Image.open(file)
 
                 mat = categorize(img, materials, top_predictions)
 
                 for material in mat:
-    
-                    if material == "Imgture of Plastic":
-                        top_predictions = [i for i in top_predictions if i["Material"]!="Imgture of Plastic"]
+
+                    if material == "Picture of Plastic":
+                        top_predictions = [
+                            i for i in top_predictions if i["Material"] != "Picture of Plastic"]
                         categorize(img, plastics, top_predictions)
-                    
-                    if material == "Imgture of Paper":
-                        top_predictions = [i for i in top_predictions if i["Material"]!="Imgture of Paper"]
+
+                    if material == "Picture of Paper":
+                        top_predictions = [
+                            i for i in top_predictions if i["Material"] != "Picture of Paper"]
                         categorize(img, papers, top_predictions)
-                    
-                    if material == "Imgture of Glass":
-                        top_predictions = [i for i in top_predictions if i["Material"]!="Imgture of Glass"]
+
+                    if material == "Picture of Glass":
+                        top_predictions = [
+                            i for i in top_predictions if i["Material"] != "Picture of Glass"]
                         categorize(img, glasses, top_predictions)
-                    
-                    if material == "Imgture of Cardboard":
-                        top_predictions = [i for i in top_predictions if i["Material"]!="Imgture of Cardboard"]
+
+                    if material == "Picture of Cardboard":
+                        top_predictions = [
+                            i for i in top_predictions if i["Material"] != "Picture of Cardboard"]
                         categorize(img, cardBoards, top_predictions)
-                
+
                 temp = []
                 for i in reversed(range(len(top_predictions))):
                     m = top_predictions[i]["Material"]
@@ -828,6 +910,6 @@ def predict():
         return jsonify({'success': ans})
     return jsonify({'error': 'not POST request'})
 
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
-
