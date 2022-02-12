@@ -279,6 +279,14 @@ def reverse_geolocation():
     
     return jsonify({"success": geolocation})
 
+@app.route('/database/addOpinion', methods=['POST'])   
+def add_recyling_opinions():
+    if request.method == 'POST':
+        pass
+    else:
+        return jsonify
+    
+
 """
     INPUT:
     latitude: X coordinate
@@ -310,6 +318,11 @@ def create_trashcan_coords():
         recycling_types = data['recycling_types']
         date = data['date_taken']
 
+        user = verify_user(id_token)
+        if (user == False):
+            return jsonify({"error": "Auth token is invalid"})
+        uid = user['uid']
+
         # Gets location data from coordinates
         location_data = extract_location_data(latitude, longitude) 
 
@@ -318,11 +331,6 @@ def create_trashcan_coords():
             country = location_data['country'].lower()
         except:
             return jsonify({"error": "Country not found. Coordinates may be invalid"})
-
-        user = verify_user(id_token)
-        if (user == False):
-            return jsonify({"error": "Auth token is invalid"})
-        uid = user['uid']
 
         if blob_exists("trashcan_images", image_id):
             return jsonify({"error": "Photo ID in use"})
@@ -368,7 +376,7 @@ def create_trashcan_coords():
         # Sets trashcan data
         trashcanref.set({
             'user': uid,
-            'pic_key': image_id,
+            'image_id': image_id,
             'location_ref': trashcan_location_ref,
             'user_ref': user_trashcans_ref,
             'recycling_types': recycling_types,
@@ -461,6 +469,7 @@ def get_trashcan():
         })
     else:
         return jsonify({"error": "not POST request"})
+
 """
     /database/createUser [POST]
     INPUT:
@@ -574,7 +583,7 @@ def add_picture():
         if blob_exists(bucket_name, image_id):
             return jsonify({"error": "Photo already exists within database"})
 
-        # users/user/photos/photo_key/metadata
+        # users/user/photos/image_id/metadata
         db.collection('users').document(uid).collection("photos").document(image_id).set(data)
 
         string = upload_blob_from_memory(bucket_name, image, image_id)
@@ -614,7 +623,7 @@ def get_picture():
             return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
-        # users/user/photos/photo_key/metadata
+        # users/user/photos/image_id/metadata
         docref = db.collection('users').document(uid).collection("photos").document(image_id)
         
         # Check if image_id entry exists
@@ -744,7 +753,6 @@ def add_item():
         return jsonify({'success': "Item was added"})
     else:
         return jsonify({'error': 'not GET request'})
-
 
 @app.route('/mapData', methods=['GET'])
 def getData():
