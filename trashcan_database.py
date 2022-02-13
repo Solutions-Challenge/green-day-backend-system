@@ -210,6 +210,7 @@ def get_trashcan():
                 'longitude': longitude,
                 'recycling_types': recycling_types,
                 'date_taken': date,
+                'image_id': image_id
             }
         })
     else:
