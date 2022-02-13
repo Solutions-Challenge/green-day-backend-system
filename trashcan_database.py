@@ -187,13 +187,8 @@ def delete_trashcan():
 @app.route('/database/getTrashcan', methods=['POST'])
 def get_trashcan():
     if request.method == 'POST':
-        id_token = request.form['id_token'].strip()
         image_id = request.form['image_id'].strip()
         doc_ref = db.collection('trashcans').document(image_id)
-        user = verify_user(id_token)
-
-        if (user == False):
-            return jsonify({"error": "Auth token is invalid"})
 
         data = doc_ref.get()
 
@@ -202,24 +197,48 @@ def get_trashcan():
 
         data = data.to_dict()
 
-        if user['uid'] != data['user']:
-            return jsonify({"error": "User doesn't own trashcan"})
-
         loc_ref = data['location_ref']
         loc_ref_data = loc_ref.get().to_dict()
+
         latitude = loc_ref_data['latitude']
         longitude = loc_ref_data['longitude']
-
         recycling_types = data['recycling_types']
-        image_base64 = download_blob_into_memory('trashcan_images', image_id)
         date = data['date_taken']
         return jsonify({
             "success": {
                 'latitude': latitude,
                 'longitude': longitude,
                 'recycling_types': recycling_types,
-                'image_base64': str(image_base64['picture']),
                 'date_taken': date,
+            }
+        })
+    else:
+        return jsonify({"error": "not POST request"})
+
+"""
+    INPUT:
+    id_token: JWT token 
+    image_id: Name of trashcan
+
+    PURPOSE:
+    Gets trashcan from trashcan database if user owns it
+"""
+@app.route('/database/getTrashcanImage', methods=['POST'])
+def get_trashcan():
+    if request.method == 'POST':
+        image_id = request.form['image_id'].strip()
+        doc_ref = db.collection('trashcans').document(image_id)
+
+        data = doc_ref.get()
+
+        if not data.exists:
+            return jsonify({"error": "Data does not exist"})
+
+        image_base64 = download_blob_into_memory('trashcan_images', image_id)
+
+        return jsonify({
+            "success": {
+                'image_base64': image_base64
             }
         })
     else:
@@ -238,7 +257,7 @@ def query_trashcan_location():
     if request.method == 'POST':
         latitude = request.form['latitude'].strip()
         longitude = request.form['longitude'].strip()
-        radius = 10
+        radius = 0.03
         # So I don't have to calculate that pesky square root
         radius *= radius
 
