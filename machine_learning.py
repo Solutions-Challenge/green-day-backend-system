@@ -1,5 +1,6 @@
 from __main__ import app
-from torch import jsonify, request
+import torch, torchvision
+from flask import jsonify, request
 from PIL import Image
 
 

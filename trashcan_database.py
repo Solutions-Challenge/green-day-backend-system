@@ -224,7 +224,7 @@ def get_trashcan():
     Gets trashcan from trashcan database if user owns it
 """
 @app.route('/database/getTrashcanImage', methods=['POST'])
-def get_trashcan():
+def get_trashcan_image():
     if request.method == 'POST':
         image_id = request.form['image_id'].strip()
         doc_ref = db.collection('trashcans').document(image_id)
