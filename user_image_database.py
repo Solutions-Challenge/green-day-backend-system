@@ -78,9 +78,7 @@ def get_picture():
         if not doc.exists:
             return jsonify({'error': "Picture doesn't exist for this user"})
 
-        picture = download_blob_into_memory(
-            'greenday-user-photos', image_id)['picture']
-
+        picture = generate_download_signed_url_v4('greenday-user-photos', image_id)
         return jsonify({
             "success": {
                 "photo": str(picture),
