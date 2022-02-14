@@ -237,7 +237,7 @@ def get_trashcan_image():
         if not data.exists:
             return jsonify({"error": "Data does not exist"})
 
-        image_url = generate_download_signed_url_v4('greenday-user-photos', image_id)
+        image_url = generate_download_signed_url_v4('trashcan_images', image_id)
 
         return jsonify({
             "success": {
