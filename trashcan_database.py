@@ -1,5 +1,6 @@
 from __main__ import app, db
 from flask import request, jsonify
+import base64
 
 from google_storage_functions import *
 from user_database import verify_user, user_exists 
@@ -28,6 +29,7 @@ def create_trashcan_coords():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
         image = request.form['image_base64'].strip()
+        image = base64.b64decode((image))
 
         image_id = request.form['image_id'].strip()
         latitude = request.form['latitude'].strip()
@@ -37,7 +39,7 @@ def create_trashcan_coords():
 
         user = verify_user(id_token)
         if (user == False):
-            return jsonify({"error": "Auth token is invalid"})
+            return jsonify({"errimage_urlor": "Auth token is invalid"})
         uid = user['uid']
 
         # Gets location data from coordinates
@@ -235,11 +237,11 @@ def get_trashcan_image():
         if not data.exists:
             return jsonify({"error": "Data does not exist"})
 
-        image_base64 = download_blob_into_memory('trashcan_images', image_id)
+        image_url = generate_download_signed_url_v4('greenday-user-photos', image_id)
 
         return jsonify({
             "success": {
-                'image_base64': image_base64
+                'image_url': str(image_url)
             }
         })
     else:
