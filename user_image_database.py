@@ -22,8 +22,9 @@ def add_picture():
         id_token = request.form['id_token'].strip()
         data = json.loads(request.form['data'].strip())
         image = request.form['image_base64'].strip()
-        image = base64.b64decode(image)
 
+        image = base64.b64decode((image))
+        
         # Verify auth token and find user in database
         user = verify_user(id_token)
         if not user:
