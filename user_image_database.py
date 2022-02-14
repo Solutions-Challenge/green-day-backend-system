@@ -2,6 +2,7 @@ from __main__ import app, db, auth
 from flask import Flask, json, request, jsonify
 from google_storage_functions import *
 from user_database import verify_user
+import base64
 
 """
     // THIS DOESN'T CHECK IF DATA IS CORRECTLY FORMATTED
@@ -21,6 +22,7 @@ def add_picture():
         id_token = request.form['id_token'].strip()
         data = json.loads(request.form['data'].strip())
         image = request.form['image_base64'].strip()
+        image = base64.b64decode(image)
 
         # Verify auth token and find user in database
         user = verify_user(id_token)
@@ -98,8 +100,6 @@ def get_picture():
     Returns all image_ids associated with user account
 
 """
-
-
 @app.route('/database/getImgKeys', methods=['POST'])
 def get_image_keys():
     if request.method == "POST":
@@ -134,8 +134,6 @@ def get_image_keys():
     Deletes a picture from user database entry and user photos if photo is associated with account
 
 """
-
-
 @app.route('/database/deleteImg', methods=['DELETE'])
 def delete_picture():
     if request.method == 'DELETE':
