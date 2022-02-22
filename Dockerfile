@@ -19,6 +19,7 @@ ENV PYTHONUNBUFFERED True
 ENV FLASK_APP main
 ENV FLASK_ENV production
 ENV PORT 8080
+ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keys/service-account.json
 
 # CMD ["python", "main.py"]
 CMD exec gunicorn --bind :$PORT --workers 3 --threads 8 --timeout 0 main:app
