@@ -1,4 +1,4 @@
-from __main__ import app, db, auth
+from main import app, db, auth
 from flask import request, jsonify
 from google_storage_functions import *
 

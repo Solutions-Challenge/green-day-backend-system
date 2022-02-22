@@ -1,4 +1,4 @@
-from __main__ import app
+from main import app
 import torch, torchvision
 from flask import jsonify, request
 from PIL import Image
