@@ -21,6 +21,7 @@ import location_database
 import user_image_database
 import trashcan_database
 import machine_learning
+import business_database
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8081)))

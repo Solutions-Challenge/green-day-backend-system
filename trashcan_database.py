@@ -39,7 +39,7 @@ def create_trashcan_coords():
 
         user = verify_user(id_token)
         if (user == False):
-            return jsonify({"errimage_urlor": "Auth token is invalid"})
+            return jsonify({"error": "Auth token is invalid"})
         uid = user['uid']
 
         # Gets location data from coordinates
