@@ -1,4 +1,4 @@
-from __main__ import app, gmaps
+from main import app, gmaps
 from flask import request, jsonify
 
 

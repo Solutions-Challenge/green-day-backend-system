@@ -1,4 +1,4 @@
-from start import app, db, auth
+from main import app, db, auth
 from flask import Flask, json, request, jsonify
 from google_storage_functions import *
 from user_database import verify_user

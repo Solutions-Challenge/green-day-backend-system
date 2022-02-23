@@ -1,4 +1,4 @@
-from start import app
+from main import app
 import torch
 import torchvision
 from flask import jsonify, request
