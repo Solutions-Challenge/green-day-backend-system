@@ -1,7 +1,9 @@
-from main import app, db, auth
-from flask import request, jsonify
+from auth_server import db
+from flask import request, jsonify, Blueprint
 from google_storage_functions import *
+from firebase_admin import auth
 
+user_data = Blueprint('user_data', __name__)
 
 def user_exists(user_id):
     user_ref = db.collection('users').document(user_id)
@@ -42,7 +44,7 @@ def verify_user(id_token):
 """
 
 
-@app.route('/database/createUser', methods=['POST'])
+@user_data.route('/database/createUser', methods=['POST'])
 def create_user():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
@@ -74,7 +76,7 @@ def create_user():
 """
 
 
-@app.route('/database/deleteUser', methods=['DELETE'])
+@user_data.route('/database/deleteUser', methods=['DELETE'])
 def delete_user_data():
     if request.method == "DELETE":
         id_token = request.form['id_token'].strip()

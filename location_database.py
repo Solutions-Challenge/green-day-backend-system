@@ -1,6 +1,6 @@
-from main import app, gmaps
-from flask import request, jsonify
-
+from flask import request, jsonify, Blueprint
+from auth_server import gmaps
+loc_data = Blueprint('loc_data', __name__)
 
 def most_frequent(List):
     if List == []:
@@ -15,7 +15,6 @@ def most_frequent(List):
             num = i
 
     return num
-
 
 """
     INPUT:
@@ -33,8 +32,6 @@ def most_frequent(List):
     PURPOSE:
     Returns a normalized global address system so we can effectively partition our data
 """
-
-
 def extract_location_data(latitude, longitude):
     addresses = gmaps.reverse_geocode((latitude, longitude))
 
@@ -93,7 +90,6 @@ def extract_location_data(latitude, longitude):
         "locality": locality.lower()
     }
 
-
 """
     INPUT:
     latitude: X coordinate
@@ -112,9 +108,7 @@ def extract_location_data(latitude, longitude):
     Relative Size
     postcode ~ locality < admin2 < admin1 < counttry
 """
-
-
-@app.route('/location/reverseGeolocation', methods=['POST'])
+@loc_data.route('/location/reverseGeolocation', methods=['POST'])
 def reverse_geolocation():
     latitude = float(request.form['latitude'].strip())
     longitude = float(request.form['longitude'].strip())

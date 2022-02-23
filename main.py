@@ -1,26 +1,24 @@
-
-import business_database
-import machine_learning
-import trashcan_database
-import user_image_database
-import location_database
 from flask import Flask, json, request, jsonify
+from location_database import loc_data
+from user_database import user_data
+from trashcan_database import trash_data
+from user_image_database import userimg_data
+from machine_learning import mach_learn
+from business_database import bus_data
 
 import os
 from flask_cors import CORS
 
-import firebase_admin
-from firebase_admin import credentials, firestore, auth
-import googlemaps
-
-gmaps = googlemaps.Client(key="AIzaSyAVR75_hunpkE3V1kbcJXfKHt1D2B3YgQs")
-cred = credentials.Certificate("service.json")
-admin = firebase_admin.initialize_app(cred)
-db = firestore.client()
-
 app = Flask(__name__)
 
 CORS(app)
+
+app.register_blueprint(loc_data)
+app.register_blueprint(user_data)
+app.register_blueprint(trash_data)
+app.register_blueprint(userimg_data)
+app.register_blueprint(mach_learn)
+app.register_blueprint(bus_data)
 
 
 if __name__ == "__main__":

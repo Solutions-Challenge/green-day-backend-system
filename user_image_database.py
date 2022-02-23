@@ -1,8 +1,11 @@
-from main import app, db, auth
-from flask import Flask, json, request, jsonify
+from auth_server import db
+from flask import Flask, json, request, jsonify, Blueprint
 from google_storage_functions import *
 from user_database import verify_user
+from firebase_admin import auth
 import base64
+
+userimg_data = Blueprint("userimg_data", __name__)
 
 """
     // THIS DOESN'T CHECK IF DATA IS CORRECTLY FORMATTED
@@ -18,7 +21,7 @@ import base64
 """
 
 
-@app.route('/database/addImg', methods=['POST'])
+@userimg_data.route('/database/addImg', methods=['POST'])
 def add_picture():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
@@ -62,7 +65,7 @@ def add_picture():
 """
 
 
-@app.route('/database/getImg', methods=['POST'])
+@userimg_data.route('/database/getImg', methods=['POST'])
 def get_picture():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
@@ -106,7 +109,7 @@ def get_picture():
 """
 
 
-@app.route('/database/getImgKeys', methods=['POST'])
+@userimg_data.route('/database/getImgKeys', methods=['POST'])
 def get_image_keys():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
@@ -142,7 +145,7 @@ def get_image_keys():
 """
 
 
-@app.route('/database/deleteImg', methods=['DELETE'])
+@userimg_data.route('/database/deleteImg', methods=['DELETE'])
 def delete_picture():
     if request.method == 'DELETE':
         id_token = request.form['id_token'].strip()
@@ -183,7 +186,7 @@ def delete_picture():
 """
 
 
-@app.route('/database/addItem', methods=['POST'])
+@userimg_data.route('/database/addItem', methods=['POST'])
 def add_item():
     if request.method == "POST":
         id_token = request.form['id_token'].strip()

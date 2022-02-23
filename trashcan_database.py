@@ -1,10 +1,12 @@
-from main import app, db
-from flask import request, jsonify
+from flask import request, jsonify, Blueprint
+from auth_server import db
 import base64
 
 from google_storage_functions import *
 from user_database import verify_user, user_exists
 from location_database import extract_location_data
+
+trash_data = Blueprint("trash_data", __name__)
 
 """
     INPUT:
@@ -26,7 +28,7 @@ from location_database import extract_location_data
 """
 
 
-@app.route('/database/createTrashcanCoords', methods=['POST'])
+@trash_data.route('/database/createTrashcanCoords', methods=['POST'])
 def create_trashcan_coords():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
@@ -119,7 +121,7 @@ def create_trashcan_coords():
 """
 
 
-@app.route('/database/getUserOwnedTrashcans', methods=['POST'])
+@trash_data.route('/database/getUserOwnedTrashcans', methods=['POST'])
 def get_trashcan_keys():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
@@ -154,7 +156,7 @@ def get_trashcan_keys():
 """
 
 
-@app.route('/database/deleteTrashcan', methods=['DELETE'])
+@trash_data.route('/database/deleteTrashcan', methods=['DELETE'])
 def delete_trashcan():
     if request.method == 'DELETE':
         id_token = request.form['id_token'].strip()
@@ -197,7 +199,7 @@ def delete_trashcan():
 """
 
 
-@app.route('/database/getTrashcan', methods=['POST'])
+@trash_data.route('/database/getTrashcan', methods=['POST'])
 def get_trashcan():
     if request.method == 'POST':
         image_id = request.form['image_id'].strip()
@@ -240,7 +242,7 @@ def get_trashcan():
 """
 
 
-@app.route('/database/getTrashcanImage', methods=['POST'])
+@trash_data.route('/database/getTrashcanImage', methods=['POST'])
 def get_trashcan_image():
     if request.method == 'POST':
         image_id = request.form['image_id'].strip()
@@ -273,7 +275,7 @@ def get_trashcan_image():
 """
 
 
-@app.route('/database/queryTrashcanLocation', methods=['POST'])
+@trash_data.route('/database/queryTrashcanLocation', methods=['POST'])
 def query_trashcan_location():
     if request.method == 'POST':
         latitude = request.form['latitude'].strip()

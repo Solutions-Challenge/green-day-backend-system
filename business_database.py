@@ -1,10 +1,12 @@
-from main import app, db
-from flask import Flask, json, request, jsonify
+from flask import Flask, json, request, jsonify, Blueprint
+from auth_server import db
 
 from google_storage_functions import *
 from user_database import verify_user, user_exists
 from location_database import extract_location_data
 import json
+
+bus_data = Blueprint("bus_data", __name__)
 
 """
     INPUT:
@@ -20,9 +22,7 @@ import json
     This adds a county entry if it exists and the database will query by level 2 Admin zone ~ County Equivalents 
 
 """
-
-
-@app.route('/database/createBusinessEntry', methods=['POST'])
+@bus_data.route('/database/createBusinessEntry', methods=['POST'])
 def create_business_entry():
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
@@ -94,7 +94,7 @@ def create_business_entry():
         return jsonify({'error': 'not POST request'})
 
 
-"""@app.route('/database/updateBusinessEntry', methods=['POST'])
+"""@bus_data.route('/database/updateBusinessEntry', methods=['POST'])
 def update_business_entry():
     id_token = request.form['id_token'].strip()
     input_data = json.loads(request.form['data'].strip())

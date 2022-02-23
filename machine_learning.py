@@ -1,7 +1,6 @@
-from main import app
 import torch
 import torchvision
-from flask import jsonify, request
+from flask import jsonify, request, Blueprint
 from PIL import Image
 
 
@@ -11,6 +10,8 @@ import numpy as np
 
 from data import data
 from data import mapData
+
+mach_learn = Blueprint("mach_learn", __name__)
 
 materials = ["Picture of a Wooden Object", "Picture of a Metallic Object", "Picture of Plastic", "Picture of Cardboard", "Picture of Paper", "Picture of Glass",
              "Picture of an Electronic device", "Picture of a Human", "Picture of Rubber or Latex Gloves", "Picture of an Animal", "Picture of a Plant"]
@@ -62,12 +63,12 @@ def categorize(img, types, top_predictions):
     return mats
 
 
-@app.route('/mapData', methods=['GET'])
+@mach_learn.route('/mapData', methods=['GET'])
 def getData():
     return jsonify({'success': mapData})
 
 
-@app.route('/predict', methods=['POST'])
+@mach_learn.route('/predict', methods=['POST'])
 def predict():
     if request.method == "POST":
         files = request.files.getlist('files[]')
