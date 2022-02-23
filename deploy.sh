@@ -10,20 +10,22 @@ SERVICE_ACCOUNT=greenday-service-account@greenday-6aba2.iam.gserviceaccount.com
 docker build -t $GOOGLE_REPO/$IMAGE_NAME:latest .
 docker tag $GOOGLE_REPO/$IMAGE_NAME:latest $CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest
 
-# docker run \
-#     -p 8080:8080 \
-#     $GOOGLE_REPO/$IMAGE_NAME:latest
+docker run \
+    -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/service.json \
+    -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/keys/service.json:ro \
+    -p 8080:8080 \
+    $GOOGLE_REPO/$IMAGE_NAME:latest
 
-gcloud builds submit --tag $CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest \
-    --project=$GOOGLE_PROJECT_ID
+# gcloud builds submit --tag $CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest \
+#     --project=$GOOGLE_PROJECT_ID
 
-gcloud auth configure-docker -q
+# gcloud auth configure-docker -q
 
-gcloud run deploy $CLOUD_RUN_SERVICE \
-    --image=$CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest \
-    --service-account=$SERVICE_ACCOUNT \
-    --region=$CLOUD_REGION \
-    --max-instances=$MAX_INSTANCES \
-    --min-instances=$MIN_INSTANCES \
-    --cpu=2 \
-    --memory=6G
+# gcloud run deploy $CLOUD_RUN_SERVICE \
+#     --image=$CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest \
+#     --service-account=$SERVICE_ACCOUNT \
+#     --region=$CLOUD_REGION \
+#     --max-instances=$MAX_INSTANCES \
+#     --min-instances=$MIN_INSTANCES \
+#     --cpu=2 \
+#     --memory=6G
