@@ -29,7 +29,7 @@ MarkupSafe==2.1.0
 msgpack==1.0.3
 numpy==1.22.2
 packaging==21.3
-Pillow==9.0.1
+Pillow==6.1.0
 proto-plus==1.20.3
 protobuf==3.19.4
 pyasn1==0.4.8
@@ -39,6 +39,10 @@ regex==2022.1.18
 requests==2.27.1
 rsa==4.8
 six==1.16.0
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==1.10.0+cu102
+torchaudio==0.10.0+cu102
+torchvision==0.11.1+cu102
 tqdm==4.62.3
 typing-extensions==4.1.1
 uritemplate==4.1.1
