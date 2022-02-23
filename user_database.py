@@ -1,12 +1,14 @@
-from main import app, db, auth
+from start import app, db, auth
 from flask import request, jsonify
 from google_storage_functions import *
+
 
 def user_exists(user_id):
     user_ref = db.collection('users').document(user_id)
     user_exist = user_ref.get()
 
     return user_exist
+
 
 def delete_collection(coll_ref, batch_size):
     docs = coll_ref.limit(batch_size).stream()
@@ -38,6 +40,8 @@ def verify_user(id_token):
     Creates a user entry in firebase
     
 """
+
+
 @app.route('/database/createUser', methods=['POST'])
 def create_user():
     if request.method == 'POST':
@@ -68,6 +72,8 @@ def create_user():
     Delete user from database and all photos associated with account
 
 """
+
+
 @app.route('/database/deleteUser', methods=['DELETE'])
 def delete_user_data():
     if request.method == "DELETE":
@@ -80,7 +86,8 @@ def delete_user_data():
 
         photo_ref = db.collection('users').document(uid).collection("photos")
         user_ref = db.collection('users').document(uid)
-        trashcan_ref = db.collection('users').document(uid).collection("owned_trashcans")
+        trashcan_ref = db.collection('users').document(
+            uid).collection("owned_trashcans")
         user_doc = user_ref.get()
 
         if not user_doc.exists:
@@ -94,9 +101,9 @@ def delete_user_data():
                 delete_blob("greenday-user-photos", image_id.id)
             except:
                 pass
-        
+
         """for trashcan in photo_ref.stream():
-        """ 
+        """
         delete_collection(user_ref.collection('photos'), 1000)
         user_ref.delete()
 
@@ -106,4 +113,3 @@ def delete_user_data():
         }})
     else:
         return jsonify({'error': 'not DELETE request'})
-

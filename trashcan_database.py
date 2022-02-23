@@ -1,9 +1,9 @@
-from main import app, db
+from start import app, db
 from flask import request, jsonify
 import base64
 
 from google_storage_functions import *
-from user_database import verify_user, user_exists 
+from user_database import verify_user, user_exists
 from location_database import extract_location_data
 
 """
@@ -24,6 +24,8 @@ from location_database import extract_location_data
     Relative Size
     postcode ~ locality < admin2 < admin1 < country
 """
+
+
 @app.route('/database/createTrashcanCoords', methods=['POST'])
 def create_trashcan_coords():
     if request.method == 'POST':
@@ -47,7 +49,7 @@ def create_trashcan_coords():
         location_data = extract_location_data(latitude, longitude)
         if location_data == None:
             return jsonify({"error": "Country not found. Coordinates may be invalid"})
-            
+
         if blob_exists("trashcan_images", image_id):
             return jsonify({"error": "Photo ID in use"})
 
@@ -104,6 +106,7 @@ def create_trashcan_coords():
     else:
         return jsonify({'error': 'not POST request'})
 
+
 """
     INPUT:
     id_token: The JWT token given by the user
@@ -114,6 +117,8 @@ def create_trashcan_coords():
     Output:
     The image_ids of every trashcan the user owns
 """
+
+
 @app.route('/database/getUserOwnedTrashcans', methods=['POST'])
 def get_trashcan_keys():
     if request.method == 'POST':
@@ -138,6 +143,7 @@ def get_trashcan_keys():
     else:
         return jsonify({"error": "not POST request"})
 
+
 """
     INPUT:
     id_token: JWT token 
@@ -146,6 +152,8 @@ def get_trashcan_keys():
     PURPOSE:
     Deletes trashcan from location, user, and trashcan, and photo databases
 """
+
+
 @app.route('/database/deleteTrashcan', methods=['DELETE'])
 def delete_trashcan():
     if request.method == 'DELETE':
@@ -178,6 +186,7 @@ def delete_trashcan():
     else:
         return jsonify({"error": "not DELETE request"})
 
+
 """
     INPUT:
     id_token: JWT token 
@@ -186,6 +195,8 @@ def delete_trashcan():
     PURPOSE:
     Gets trashcan from trashcan database if user owns it
 """
+
+
 @app.route('/database/getTrashcan', methods=['POST'])
 def get_trashcan():
     if request.method == 'POST':
@@ -218,6 +229,7 @@ def get_trashcan():
     else:
         return jsonify({"error": "not POST request"})
 
+
 """
     INPUT:
     id_token: JWT token 
@@ -226,6 +238,8 @@ def get_trashcan():
     PURPOSE:
     Gets trashcan from trashcan database if user owns it
 """
+
+
 @app.route('/database/getTrashcanImage', methods=['POST'])
 def get_trashcan_image():
     if request.method == 'POST':
@@ -237,7 +251,8 @@ def get_trashcan_image():
         if not data.exists:
             return jsonify({"error": "Data does not exist"})
 
-        image_url = generate_download_signed_url_v4('trashcan_images', image_id)
+        image_url = generate_download_signed_url_v4(
+            'trashcan_images', image_id)
 
         return jsonify({
             "success": {
@@ -247,6 +262,7 @@ def get_trashcan_image():
     else:
         return jsonify({"error": "not POST request"})
 
+
 """
     INPUT:
     latitude: 
@@ -255,6 +271,8 @@ def get_trashcan_image():
     PURPOSE:
     Querys known trashcans by coordinates
 """
+
+
 @app.route('/database/queryTrashcanLocation', methods=['POST'])
 def query_trashcan_location():
     if request.method == 'POST':
@@ -267,10 +285,11 @@ def query_trashcan_location():
         location_data = extract_location_data(latitude, longitude)
         if location_data == None:
             return jsonify({"error": "Country not found. Coordinates may be invalid"})
-            
+
         postcode = location_data['postcode']
         country = location_data['country']
-        trashcan_list = db.collection('location_data').document(country).collection('postal_codes').document(postcode).collection("trashcans").stream()
+        trashcan_list = db.collection('location_data').document(country).collection(
+            'postal_codes').document(postcode).collection("trashcans").stream()
         trashcans = []
         for trashcan in trashcan_list:
             loc_data = trashcan.to_dict()
@@ -278,15 +297,14 @@ def query_trashcan_location():
             x2 = float(loc_data['latitude'])
             y1 = float(longitude)
             y2 = float(loc_data['longitude'])
-            ys = y2 - y1 
-            xs = x2 - x1 
+            ys = y2 - y1
+            xs = x2 - x1
             if radius < (ys * ys + xs * xs):
                 continue
 
             trashcans.append(trashcan.id)
             #trash_ref = trashcan.to_dict()['ref'].get().to_dict()
-            
-        return jsonify({"Success":trashcans})
+
+        return jsonify({"Success": trashcans})
     else:
         return jsonify({"error": "not POST request"})
-

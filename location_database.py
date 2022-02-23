@@ -1,4 +1,4 @@
-from main import app, gmaps
+from __main__ import app, gmaps
 from flask import request, jsonify
 
 
@@ -33,6 +33,8 @@ def most_frequent(List):
     PURPOSE:
     Returns a normalized global address system so we can effectively partition our data
 """
+
+
 def extract_location_data(latitude, longitude):
     addresses = gmaps.reverse_geocode((latitude, longitude))
 
@@ -80,9 +82,9 @@ def extract_location_data(latitude, longitude):
 
     if admin2 == None:
         admin2 = sub2
-    if sub2 == None: 
+    if sub2 == None:
         admin2 = locality
-        
+
     return {
         "admin2": admin2.lower() if admin2 != None else sub2.lower(),
         "admin1": admin1.lower() if admin1 != None else sub1.lower(),
@@ -90,6 +92,7 @@ def extract_location_data(latitude, longitude):
         "country": country.lower(),
         "locality": locality.lower()
     }
+
 
 """
     INPUT:
@@ -109,6 +112,7 @@ def extract_location_data(latitude, longitude):
     Relative Size
     postcode ~ locality < admin2 < admin1 < counttry
 """
+
 
 @app.route('/location/reverseGeolocation', methods=['POST'])
 def reverse_geolocation():

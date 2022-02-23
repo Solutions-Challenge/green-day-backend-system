@@ -1,4 +1,4 @@
-from main import app, db, auth
+from start import app, db, auth
 from flask import Flask, json, request, jsonify
 from google_storage_functions import *
 from user_database import verify_user
@@ -16,6 +16,8 @@ import base64
     Adds a picture to user entry in firebase and google cloud storage along with metadata
 
 """
+
+
 @app.route('/database/addImg', methods=['POST'])
 def add_picture():
     if request.method == "POST":
@@ -24,7 +26,7 @@ def add_picture():
         image = request.form['image_base64'].strip()
 
         image = base64.b64decode((image))
-        
+
         # Verify auth token and find user in database
         user = verify_user(id_token)
         if not user:
@@ -58,6 +60,8 @@ def add_picture():
     Returns the base64 encoding of photo and json with metadata
 
 """
+
+
 @app.route('/database/getImg', methods=['POST'])
 def get_picture():
     if request.method == "POST":
@@ -79,7 +83,8 @@ def get_picture():
         if not doc.exists:
             return jsonify({'error': "Picture doesn't exist for this user"})
 
-        picture = generate_download_signed_url_v4('greenday-user-photos', image_id)
+        picture = generate_download_signed_url_v4(
+            'greenday-user-photos', image_id)
         return jsonify({
             "success": {
                 "photo": str(picture),
@@ -99,6 +104,8 @@ def get_picture():
     Returns all image_ids associated with user account
 
 """
+
+
 @app.route('/database/getImgKeys', methods=['POST'])
 def get_image_keys():
     if request.method == "POST":
@@ -133,6 +140,8 @@ def get_image_keys():
     Deletes a picture from user database entry and user photos if photo is associated with account
 
 """
+
+
 @app.route('/database/deleteImg', methods=['DELETE'])
 def delete_picture():
     if request.method == 'DELETE':
@@ -172,6 +181,8 @@ def delete_picture():
     This adds a json to the MULTI array which holds data for bounding boxes
 
 """
+
+
 @app.route('/database/addItem', methods=['POST'])
 def add_item():
     if request.method == "POST":
@@ -201,4 +212,3 @@ def add_item():
         return jsonify({'success': "Item was added"})
     else:
         return jsonify({'error': 'not GET request'})
-

@@ -1,8 +1,8 @@
-from main import app, db
+from start import app, db
 from flask import Flask, json, request, jsonify
 
 from google_storage_functions import *
-from user_database import verify_user, user_exists 
+from user_database import verify_user, user_exists
 from location_database import extract_location_data
 import json
 
@@ -19,7 +19,9 @@ import json
     Notes:
     This adds a county entry if it exists and the database will query by level 2 Admin zone ~ County Equivalents 
 
-""" 
+"""
+
+
 @app.route('/database/createBusinessEntry', methods=['POST'])
 def create_business_entry():
     if request.method == 'POST':
@@ -40,12 +42,12 @@ def create_business_entry():
             'zipcode': None
         }
 
-        # We input intersection of the accepted data and the data we recieved 
+        # We input intersection of the accepted data and the data we recieved
         for x in set(input_data).intersection(set(business_data.keys())):
             business_data[x] = input_data[x]
-            
-        if ( business_data['latitude'] == None or business_data['longitude'] == None):
-            return jsonify({"error": "Latitude or longtitude wasn't given"}) 
+
+        if (business_data['latitude'] == None or business_data['longitude'] == None):
+            return jsonify({"error": "Latitude or longtitude wasn't given"})
         else:
             latitude = business_data['latitude']
             longitude = business_data['longitude']
@@ -76,7 +78,8 @@ def create_business_entry():
             return jsonify({"error": "Country extracted from coordinates doesn't match given country"})"""
 
         # Gets the level 2 admin zone and sets the key to the level 2 admin zone
-        location_ref = db.collection(u'location_data').document(country).collection("admin2").document(location_key)
+        location_ref = db.collection(u'location_data').document(
+            country).collection("admin2").document(location_key)
 
         location_ref.set({
             "latitude": latitude,
@@ -89,6 +92,7 @@ def create_business_entry():
         return jsonify({'success': "Business added!"})
     else:
         return jsonify({'error': 'not POST request'})
+
 
 """@app.route('/database/updateBusinessEntry', methods=['POST'])
 def update_business_entry():

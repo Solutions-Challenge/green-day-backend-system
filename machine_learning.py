@@ -1,5 +1,6 @@
-from main import app
-import torch, torchvision
+from start import app
+import torch
+import torchvision
 from flask import jsonify, request
 from PIL import Image
 
@@ -21,7 +22,7 @@ glasses = ["Picture of Broken Glass",
            "Picture of Ceramic", "Picture of Glassware"]
 cardBoards = ["Picture of Cardboard which doesn't contain food",
               "Picture of a Cardboard which contains pizza"]
-              
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 
@@ -33,6 +34,7 @@ ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg']
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def categorize(img, types, top_predictions):
     image = preprocess(img).unsqueeze(0).to(device)
@@ -59,10 +61,12 @@ def categorize(img, types, top_predictions):
         mats.append(types[x])
     return mats
 
+
 @app.route('/mapData', methods=['GET'])
 def getData():
     return jsonify({'success': mapData})
-    
+
+
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == "POST":
@@ -116,4 +120,3 @@ def predict():
 
         return jsonify({'success': ans})
     return jsonify({'error': 'not POST request'})
-
