@@ -8,3 +8,4 @@ serverTest.__pycache__
 requirements.txt
 venv
 wsl
+service-account.json

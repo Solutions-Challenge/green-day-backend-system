@@ -9,6 +9,10 @@ WORKDIR /app
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True
 
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 # Upgrade PIP
 RUN pip install --upgrade pip
 
@@ -19,7 +23,7 @@ ENV PYTHONUNBUFFERED True
 ENV FLASK_APP main
 ENV FLASK_ENV production
 ENV PORT 8080
-ENV GOOGLE_APPLICATION_CREDENTIALS service.json
+# ENV GOOGLE_APPLICATION_CREDENTIALS ./service-account.json
 
 # CMD ["python", "main.py"]
 CMD exec gunicorn --bind :$PORT --workers 3 --threads 8 --timeout 0 main:app

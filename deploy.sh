@@ -21,6 +21,7 @@ gcloud auth configure-docker -q
 
 gcloud run deploy $CLOUD_RUN_SERVICE \
     --image=$CLOUD_REGION-docker.pkg.dev/$GOOGLE_PROJECT_ID/$GOOGLE_REPO/$IMAGE_NAME:latest \
+    --clear-env-vars \
     --service-account=$SERVICE_ACCOUNT \
     --region=$CLOUD_REGION \
     --max-instances=$MAX_INSTANCES \
