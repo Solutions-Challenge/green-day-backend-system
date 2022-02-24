@@ -1,5 +1,8 @@
 from google.cloud import storage
 import datetime
+import google.auth
+from google.auth.transport import requests
+from google.auth import compute_engine
 
 storage_client = storage.Client()
 
@@ -17,12 +20,18 @@ def generate_download_signed_url_v4(bucket_name, blob_name):
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
 
+    
+
+    auth_request = requests.Request()
+    signing_credentials = compute_engine.IDTokenCredentials(auth_request, "", service_account_email="greenday-service-account@greenday-6aba2.iam.gserviceaccount.com")
+    
     url = blob.generate_signed_url(
         version="v4",
         # This URL is valid for 15 minutes
         expiration=datetime.timedelta(minutes=2),
         # Allow GET requests using this URL.
         method="GET",
+        credentials=signing_credentials
     )
 
     return url
