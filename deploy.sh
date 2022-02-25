@@ -3,7 +3,7 @@ GOOGLE_REPO=greenday
 CLOUD_REGION=us-east1
 IMAGE_NAME=multi
 CLOUD_RUN_SERVICE=multi-service
-MIN_INSTANCES=1
+MIN_INSTANCES=0
 MAX_INSTANCES=3
 SERVICE_ACCOUNT=greenday-service-account@greenday-6aba2.iam.gserviceaccount.com
 
