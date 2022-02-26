@@ -1,3 +1,4 @@
+from email.mime import image
 from auth_server import db
 from flask import request, jsonify, Blueprint
 from google_storage_functions import *
@@ -28,6 +29,9 @@ def delete_collection(coll_ref, batch_size):
 def verify_user(id_token):
     try:
         decoded_token = auth.verify_id_token(id_token)
+        if decoded_token['firebase']['sign_in_provider'] == "anonymous":
+            print("Hi")
+            return False
     except:
         return False
     return decoded_token
@@ -74,44 +78,65 @@ def create_user():
     Delete user from database and all photos associated with account
 
 """
-
-
 @user_data.route('/database/deleteUser', methods=['DELETE'])
 def delete_user_data():
     if request.method == "DELETE":
         id_token = request.form['id_token'].strip()
 
+        # Verifies if the user token is valid and not anonymous
         user = verify_user(id_token)
         if not user:
             return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
-        photo_ref = db.collection('users').document(uid).collection("photos")
+        # Gets the reference to user itself. 
         user_ref = db.collection('users').document(uid)
-        trashcan_ref = db.collection('users').document(
-            uid).collection("owned_trashcans")
-        user_doc = user_ref.get()
 
+        # Checks if the user exists
+        user_doc = user_ref.get()
         if not user_doc.exists:
             return jsonify({'error': "User doesn't exists"})
 
-        array = []
+        # Gets the reference to user owned photos and trashcans 
+        photo_ref = user_ref.collection("photos")
+        owned_trashcan_ref = user_ref.collection("owned_trashcans")
 
+        # Deletes all user owned photos
+        user_images = []
+        
         for image_id in photo_ref.stream():
-            array.append(image_id.id)
+            user_images.append(image_id.id)
             try:
                 delete_blob("greenday-user-photos", image_id.id)
             except:
                 pass
-
-        """for trashcan in photo_ref.stream():
-        """
         delete_collection(user_ref.collection('photos'), 1000)
+        
+
+        # Deletes all user owned trashcans 
+        user_trashcans = []
+        for owned_trashcan in owned_trashcan_ref.stream():
+            # Gets the trash can from its entry in trashcan 
+            trashcan_ref = owned_trashcan.to_dict()['user_ref']
+            trashcan = trashcan_ref.get().to_dict()
+
+            location_ref = trashcan['location_ref']
+            image_id = trashcan['image_id']
+            try:
+                delete_blob("trashcan_images", image_id)
+                user_trashcans.append(image_id)
+            except:
+                pass
+            
+            trashcan_ref.delete()
+            location_ref.delete()
+            
+        delete_collection(user_ref.collection('owned_trashcans'), 1000)
+
         user_ref.delete()
 
         return jsonify({'success': {
-            'code': 'User data was deleted and {} photo(s) deleted'.format(len(array)),
-            'photos': tuple(array)
+            'code': 'User data was deleted, {} photo(s) deleted, and {} trashcan(s) deleted'.format(len(user_images), len(user_trashcans))
         }})
     else:
         return jsonify({'error': 'not DELETE request'})
