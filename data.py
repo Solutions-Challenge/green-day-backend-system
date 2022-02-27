@@ -6,7 +6,7 @@ mapData = [
     },
     {
         "key": 1,
-        "name": 'Bio-degradable',
+        "name": 'Compostable',
         "icon": 'https://i.imgur.com/rw6KwV3.png'
     },
     {
@@ -18,6 +18,16 @@ mapData = [
         "key": 3,
         "name": 'E-waste',
         "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Electronic.png'
+    },
+    {
+        "key": 4,
+        "name": 'Cardboard',
+        "icon": "https://i.imgur.com/AV4ROhB.png"
+    },
+    {
+        "key": 5,
+        "name": "Glass",
+        "icon": "https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Glass.png"
     }
 ]
 
@@ -95,12 +105,12 @@ data = {
     "Picture of Glassware": {
         "Material": "Glassware",
         "Recyclability": "Recyclable",
-        "mapData": mapData[0]
+        "mapData": mapData[5]
     },
     "Picture of Cardboard which doesn't contain food": {
         "Material": "Cardboard",
         "Recyclability": "Recyclable",
-        "mapData": mapData[0]
+        "mapData": mapData[4]
     },
     "Picture of a Cardboard which contains pizza": {
         "Material": "Pizza Box",
