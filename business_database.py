@@ -28,6 +28,12 @@ def create_business_entry():
         id_token = request.form['id_token'].strip()
         input_data = json.loads(request.form['data'].strip())
 
+        # Verify the user 
+        user = verify_user(id_token)
+        if (user == False):
+            return jsonify({"error": "Auth token is invalid"})
+        uid = user['uid']
+
         # This is the expected data we want add more necessary
         business_data = {
             "name": None,
@@ -51,11 +57,6 @@ def create_business_entry():
             latitude = business_data['lat']
             longitude = business_data['lng']
 
-        user = verify_user(id_token)
-        if (user == False):
-            return jsonify({"error": "Auth token is invalid"})
-        uid = user['uid']
-
         # Gets location data from coordinates
         # If country is valid then continue otherwise return error
         location_data = extract_location_data(latitude, longitude)
@@ -69,7 +70,7 @@ def create_business_entry():
             return jsonify({"error": "User already exists"})
 
         # Extracts location data and assigns them
-        location_key = location_data['admin2']
+        location_key = "{}_{}".format(location_data['admin2'], location_data['admin1'])
         country = location_data['country'].lower()
 
         """# Checks if country in coordinates matches given country
@@ -93,23 +94,39 @@ def create_business_entry():
         return jsonify({'error': 'not POST request'})
 
 
-"""@bus_data.route('/database/updateBusinessEntry', methods=['POST'])
+@bus_data.route('/database/updateBusinessEntry', methods=['POST'])
 def update_business_entry():
-    id_token = request.form['id_token'].strip()
-    input_data = json.loads(request.form['data'].strip())
+    if request.method == 'POST':
+        id_token = request.form['id_token'].strip()
+        input_data = json.loads(request.form['data'].strip())
 
-    business_data = {
-        'name': None,
-        'city': None,
-        'full_address': None,
-        'latitude': None,
-        'longitude': None,
-        'phone': None,
-        'recycledType': None,
-        'time': None,
-        'websiteURL': None,
-        'zipcode': None
-    }
+        # Verify the user 
+        user = verify_user(id_token)
+        if (user == False):
+            return jsonify({"error": "Auth token is invalid"})
+        uid = user['uid']
 
-    for x in set(input_data).intersection(set(business_data.keys())):
-        business_data[x] = input_data[x]"""
+        business_ref = db.collection('business').document(uid)
+
+        business = business_ref.get()
+        if not business.exists:
+            return jsonify({'error': "Business doesn't exist"})
+
+        business_data = business.to_dict()
+
+        changed = dict()
+        # We input intersection of the accepted data and the data we recieved
+        accepted_inputted = set(input_data).intersection(set(business_data.keys()))
+        for x in accepted_inputted:
+            if business_data[x] != input_data[x]:
+                business_data[x] = input_data[x]
+                changed[x] = input_data[x]
+
+        business_ref.set(business_data)
+
+        return jsonify({"success": {
+            "changed items": changed
+        }})
+    else:
+        return jsonify({'error': 'not POST request'})
+
