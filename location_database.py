@@ -16,14 +16,15 @@ def most_frequent(List):
 
     return num
 
-"""
-    INPUT:
-    latitude: X coordinate
-    longitude: Y coordinate
+def extract_location_data(latitude, longitude):
+    """
+    ARGUMENTS:
+    latitude:string = X coordinate  
+    longitude:string = Y coordinate
     OUTPUT:
     {
-        "subsection-2": level 2 admin zone if exists else post-code else admin 1 zone,
-        "subsection-1": level 1 admin zone,
+        "admin2": level 2 admin zone if exists else post-code else admin 1 zone,
+        "admin1": level 1 admin zone,
         "postcode": the global postal code of coordinates,
         "country": country
         "locality": Town or city equivalent
@@ -31,8 +32,7 @@ def most_frequent(List):
 
     PURPOSE:
     Returns a normalized global address system so we can effectively partition our data
-"""
-def extract_location_data(latitude, longitude):
+    """
     addresses = gmaps.reverse_geocode((latitude, longitude))
 
     sub1 = []
