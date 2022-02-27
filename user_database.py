@@ -5,6 +5,9 @@ from firebase_admin import auth
 
 user_data = Blueprint('user_data', __name__)
 
+"""
+Takes a user_id and checks if there is a database entry
+"""
 def user_exists(user_id):
     user_ref = db.collection('users').document(user_id)
     user_exist = user_ref.get()
