@@ -1,35 +1,24 @@
 mapData = [
     {
+        "key": 0,
+        "name": 'Recyclable',
+        "icon": 'https://i.imgur.com/CVPZO5u.png'
+    },
+    {
         "key": 1,
-        "name": 'Wood',
-        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Wood.png'
+        "name": 'Bio-degradable',
+        "icon": 'https://i.imgur.com/rw6KwV3.png'
     },
     {
         "key": 2,
-        "name": 'Metal',
-        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Metal.png'
+        "name": 'Landfill',
+        "icon": 'https://i.imgur.com/D5rAn86.png'
     },
     {
         "key": 3,
-        "name": 'Glass',
-        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Glass.png'
-    },
-    {
-        "key": 4,
-        "name": 'Plastic',
-        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Plastic.png'
-    },
-    {
-        "key": 5,
-        "name": 'Paper',
-        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Paper.png'
-    },
-    {
-        "key": 6,
-        "name": 'Electronic',
-        "icon": "https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Electronic.png"
-    },
-
+        "name": 'E-waste',
+        "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Electronic.png'
+    }
 ]
 
 data = {
@@ -41,57 +30,57 @@ data = {
     "Picture of a Metallic Object": {
         "Material": "Metal",
         "Recyclability": "Recyclable",
-        "mapData": mapData[1]
+        "mapData": mapData[0]
     },
     "Picture of an Electronic device": {
         "Material": "Electronic",
         "Recyclability": "Special-Case",
-        "mapData": mapData[5]
+        "mapData": mapData[3]
     },
     "Picture of a Human": {
         "Material": "Human",
         "Recyclability": "Special-Case",
-        "mapData": mapData[0]
+        "mapData": mapData[1]
     },
     "Picture of Rubber or Latex Gloves": {
         "Material": "Rubber",
         "Recyclability": "Not Recyclable",
-        "mapData": mapData[0]
+        "mapData": mapData[2]
     },
     "Picture of Styrofoam": {
         "Material": "Styrofoam",
         "Recyclability": "Not Recyclable",
-        "mapData": mapData[3]
+        "mapData": mapData[2]
     },
     "Picture of Plastic Bag": {
         "Material": "Plastic Bag",
         "Recyclability": "Not Recyclable",
-        "mapData": mapData[3]
+        "mapData": mapData[2]
     },
     "Picture of a Plastic Wrapper or Plastic Film": {
         "Material": "Plastic Wrapper or Film",
         "Recyclability": "Not Recyclable",
-        "mapData": mapData[3]
+        "mapData": mapData[2]
     },
     "Picture of Bubble Wrap": {
         "Material": "Bubble Wrap",
         "Recyclability": "Not Recyclable",
-        "mapData": mapData[3]
+        "mapData": mapData[2]
     },
     "Picture of Shredded Paper": {
         "Material": "Shredded Paper",
         "Recyclability": "Recyclable",
-        "mapData": mapData[4]
+        "mapData": mapData[0]
     },
     "Picture of Soiled Paper": {
         "Material": "Soiled Paper",
         "Recyclability": "Not Recyclable",
-        "mapData": mapData[4]
+        "mapData": mapData[2]
     },
     "Picture of Clean Paper": {
         "Material": "Clean Paper",
         "Recyclability": "Recyclable",
-        "mapData": mapData[4]
+        "mapData": mapData[0]
     },
     "Picture of Broken Glass": {
         "Material": "Broken Glass",
@@ -106,7 +95,7 @@ data = {
     "Picture of Glassware": {
         "Material": "Glassware",
         "Recyclability": "Recyclable",
-        "mapData": mapData[2]
+        "mapData": mapData[0]
     },
     "Picture of Cardboard which doesn't contain food": {
         "Material": "Cardboard",
@@ -116,16 +105,16 @@ data = {
     "Picture of a Cardboard which contains pizza": {
         "Material": "Pizza Box",
         "Recyclability": "Not Recyclable",
-        "mapData": mapData[0]
+        "mapData": mapData[2]
     },
     "Picture of an Animal": {
         "Material": "Animal",
         "Recyclability": "Special-Case",
-        "mapData": mapData[0]
+        "mapData": mapData[1]
     },
     "Picture of a Plant": {
         "Material": "Plant",
         "Recyclability": "Bio-degradable",
-        "mapData": mapData[0]
+        "mapData": mapData[1]
     }
 }
