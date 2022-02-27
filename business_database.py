@@ -79,7 +79,7 @@ def create_business_entry():
 
         # Gets the level 2 admin zone and sets the key to the level 2 admin zone
         location_ref = db.collection(u'location_data').document(
-            country).collection("admin2").document(location_key)
+            country).collection("admin2").document(location_key).collection("businesses").document(uid)
 
         location_ref.set({
             "latitude": latitude,
@@ -181,8 +181,32 @@ def get_business_data():
         business_data = business.to_dict()
 
         if business_data.pop('location_ref', False) == False:
-            return jsonify({'error': 'Critical error there is no location ref to this location'})
+            return jsonify({'error': 'There is no location ref to this location'})
         
         return jsonify({"success":  business_data})
+    else:
+        return jsonify({'error': 'not POST request'})
+
+
+@bus_data.route('/database/queryBusiness', methods=['POST'])
+def query_business_ids():
+    if request.method == 'POST':
+        latitude = float(request.form['latitude'].strip())
+        longitude = float(request.form['longitude'].strip())
+
+
+        location_data = extract_location_data(latitude, longitude)
+
+        country = location_data['country']
+        admin2 = "{}_{}".format(location_data['admin2'], location_data['admin1'])
+
+        business_locations = db.collection('location_data').document(country).collection('admin2').document(admin2).collection('businesses')
+
+        business_ids = []
+
+        for business in business_locations.stream():
+            business_ids.append(business.id)
+
+        return jsonify({"success":  business_ids})
     else:
         return jsonify({'error': 'not POST request'})
