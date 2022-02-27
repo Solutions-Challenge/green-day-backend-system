@@ -86,6 +86,8 @@ def create_business_entry():
             "longitude": longitude,
             "business_ref": business_ref
         })
+        
+        business_data['location_ref'] = location_ref
 
         business_ref.set(business_data)
 
@@ -114,6 +116,9 @@ def update_business_entry():
 
         business_data = business.to_dict()
 
+        if business_data.pop('location_ref', not_found=True):
+            return jsonify({'error': 'Critical error there is no location ref to this location'})
+
         changed = dict()
         # We input intersection of the accepted data and the data we recieved
         accepted_inputted = set(input_data).intersection(set(business_data.keys()))
@@ -130,3 +135,34 @@ def update_business_entry():
     else:
         return jsonify({'error': 'not POST request'})
 
+@bus_data.route('/database/deleteBusiness', methods=['DELETE'])
+def delete_business_entry():
+    if request.method == "DELETE":
+        id_token = request.form['id_token'].strip()
+        
+        # Verify the user 
+        user = verify_user(id_token)
+        if not user:
+            return jsonify({"error": "Auth token is invalid"})
+        
+        uid = user['uid']
+        
+        business_ref = db.collection('business').document(uid)
+
+        business = business_ref.get()
+        if not business.exists:
+            return jsonify({'error': "Business doesn't exist"})
+
+        business_data = business.to_dict()
+
+        try:
+            location_ref = business_data['location_ref']
+            location_ref.delete()
+        except:
+            pass
+        
+        business_ref.delete()
+
+        return jsonify({'success': 'Business deleted'})
+    else:
+        return jsonify({'error': 'not DELETE request'})
