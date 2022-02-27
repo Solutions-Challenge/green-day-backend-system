@@ -130,14 +130,12 @@ def get_trashcan_keys():
         if (user == False):
             return jsonify({"error": "Auth token is invalid"})
         uid = user['uid']
-
+        print(uid)
         if not user_exists(uid):
-            return jsonify({"error": "user entry not created in database"})
+            return jsonify({"error": "user doesn't exist"})
 
-        trashcans = db.collection('users').document(
-            uid).collection('owned_trashcans').stream()
+        trashcans = db.collection('users').document(uid).collection('owned_trashcans').stream()
         trashcan_ids = []
-
         for trashcan in trashcans:
             trashcan_ids.append(trashcan.id)
 
@@ -307,6 +305,6 @@ def query_trashcan_location():
             trashcans.append(trashcan.id)
             #trash_ref = trashcan.to_dict()['ref'].get().to_dict()
 
-        return jsonify({"Success": trashcans})
+        return jsonify({"success": trashcans})
     else:
         return jsonify({"error": "not POST request"})

@@ -1,4 +1,3 @@
-from email.mime import image
 from auth_server import db
 from flask import request, jsonify, Blueprint
 from google_storage_functions import *
@@ -30,7 +29,6 @@ def verify_user(id_token):
     try:
         decoded_token = auth.verify_id_token(id_token)
         if decoded_token['firebase']['sign_in_provider'] == "anonymous":
-            print("Hi")
             return False
     except:
         return False
@@ -60,7 +58,7 @@ def create_user():
         docref = db.collection(u'users').document(user['uid'])
 
         doc = docref.get()
-
+        docref.set({"email":user['email']})
         if doc.exists:
             return jsonify({'error': "User already exists"})
 
@@ -95,7 +93,7 @@ def delete_user_data():
         # Checks if the user exists
         user_doc = user_ref.get()
         if not user_doc.exists:
-            return jsonify({'error': "User doesn't exists"})
+            return jsonify({'error': "User doesn't exist"})
 
         # Gets the reference to user owned photos and trashcans 
         photo_ref = user_ref.collection("photos")

@@ -30,27 +30,26 @@ def create_business_entry():
 
         # This is the expected data we want add more necessary
         business_data = {
-            'name': None,
-            'city': None,
-            'full_address': None,
-            'latitude': None,
-            'longitude': None,
-            'phone': None,
-            'recycledType': None,
-            'time': None,
-            'websiteURL': None,
-            'zipcode': None
+            "name": None,
+            "pictureURL": None,
+            "category": None,
+            "recyclingTypes": None,
+            "location": None,
+            "phone": None,
+            "website": None,
+            "lat": None,
+            "lng": None
         }
 
         # We input intersection of the accepted data and the data we recieved
         for x in set(input_data).intersection(set(business_data.keys())):
             business_data[x] = input_data[x]
 
-        if (business_data['latitude'] == None or business_data['longitude'] == None):
+        if (business_data['lat'] == None or business_data['lng'] == None):
             return jsonify({"error": "Latitude or longtitude wasn't given"})
         else:
-            latitude = business_data['latitude']
-            longitude = business_data['longitude']
+            latitude = business_data['lat']
+            longitude = business_data['lng']
 
         user = verify_user(id_token)
         if (user == False):
