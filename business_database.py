@@ -116,7 +116,7 @@ def update_business_entry():
 
         business_data = business.to_dict()
 
-        if business_data.pop('location_ref', not_found=True):
+        if business_data.pop('location_ref', True):
             return jsonify({'error': 'Critical error there is no location ref to this location'})
 
         changed = dict()
@@ -166,3 +166,23 @@ def delete_business_entry():
         return jsonify({'success': 'Business deleted'})
     else:
         return jsonify({'error': 'not DELETE request'})
+
+@bus_data.route('/database/getBusinessData', methods=['POST'])
+def get_business_data():
+    if request.method == 'POST':
+        uid = request.form['uid'].strip()
+
+        business_ref = db.collection('business').document(uid)
+
+        business = business_ref.get()
+        if not business.exists:
+            return jsonify({'error': "Business doesn't exist"})
+
+        business_data = business.to_dict()
+
+        if business_data.pop('location_ref', False) == False:
+            return jsonify({'error': 'Critical error there is no location ref to this location'})
+        
+        return jsonify({"success":  business_data})
+    else:
+        return jsonify({'error': 'not POST request'})
