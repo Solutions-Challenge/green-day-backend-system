@@ -61,7 +61,7 @@ def create_trashcan_coords():
         if not user_doc.exists:
             return jsonify({"error": "User does not exist"})
 
-        # Refers to trashcan database where photo id and othe refs are stored
+        # Refers to trashcan database where photo id and other refs are stored
         trashcanref = db.collection('trashcans').document(image_id)
 
         # Extracts location data and assigns them
@@ -130,7 +130,6 @@ def get_trashcan_keys():
         if (user == False):
             return jsonify({"error": "Auth token is invalid"})
         uid = user['uid']
-        print(uid)
         if not user_exists(uid):
             return jsonify({"error": "user doesn't exist"})
 
@@ -200,34 +199,39 @@ def delete_trashcan():
 @trash_data.route('/database/getTrashcan', methods=['POST'])
 def get_trashcan():
     if request.method == 'POST':
-        image_id = request.form['image_id'].strip()
-        doc_ref = db.collection('trashcans').document(image_id)
+        image_ids = request.form['image_ids']
 
-        data = doc_ref.get()
+        image_ids = image_ids.split(",")
 
-        if not data.exists:
-            return jsonify({"error": "Data does not exist"})
+        ans = []
+        for image_id in image_ids:
+            doc_ref = db.collection('trashcans').document(image_id)
 
-        data = data.to_dict()
+            data = doc_ref.get()
 
-        loc_ref = data['location_ref']
-        loc_ref_data = loc_ref.get().to_dict()
+            if not data.exists:
+                return jsonify({"error": "Data does not exist"})
 
-        latitude = loc_ref_data['latitude']
-        longitude = loc_ref_data['longitude']
-        recycling_types = data['recycling_types']
-        date = data['date_taken']
-        return jsonify({
-            "success": {
-                'latitude': latitude,
-                'longitude': longitude,
-                'recycling_types': recycling_types,
-                'date_taken': date,
-                'image_id': image_id
-            }
-        })
+            data = data.to_dict()
+
+            loc_ref = data['location_ref']
+            loc_ref_data = loc_ref.get().to_dict()
+
+            latitude = loc_ref_data['latitude']
+            longitude = loc_ref_data['longitude']
+            recycling_types = data['recycling_types']
+            date = data['date_taken']
+            ans.append({
+                    'latitude': latitude,
+                    'longitude': longitude,
+                    'recycling_types': recycling_types,
+                    'date_taken': date,
+                    'image_id': image_id
+                })
+        return jsonify(ans)
     else:
         return jsonify({"error": "not POST request"})
+
 
 
 """
@@ -243,22 +247,28 @@ def get_trashcan():
 @trash_data.route('/database/getTrashcanImage', methods=['POST'])
 def get_trashcan_image():
     if request.method == 'POST':
-        image_id = request.form['image_id'].strip()
-        doc_ref = db.collection('trashcans').document(image_id)
+        image_ids = request.form['image_ids']
 
-        data = doc_ref.get()
+        image_ids = image_ids.split(",")
 
-        if not data.exists:
-            return jsonify({"error": "Data does not exist"})
+        ans = []
 
-        image_url = generate_download_signed_url_v4(
-            'trashcan_images', image_id)
+        for image_id in image_ids:
 
-        return jsonify({
-            "success": {
-                'image_url': str(image_url)
-            }
-        })
+            doc_ref = db.collection('trashcans').document(image_id)
+
+            data = doc_ref.get()
+
+            if not data.exists:
+                return jsonify({"error": "Data does not exist"})
+
+
+            image_url = generate_download_signed_url_v4(
+                'trashcan_images', image_id)   
+
+            ans.append(str(image_url)) 
+        
+        return jsonify({"success": ans})
     else:
         return jsonify({"error": "not POST request"})
 
@@ -278,7 +288,7 @@ def query_trashcan_location():
     if request.method == 'POST':
         latitude = request.form['latitude'].strip()
         longitude = request.form['longitude'].strip()
-        radius = 0.03
+        radius = 0.09
         # So I don't have to calculate that pesky square root
         radius *= radius
 
