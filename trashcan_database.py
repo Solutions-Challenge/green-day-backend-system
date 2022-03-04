@@ -56,10 +56,8 @@ def create_trashcan_coords():
             return jsonify({"error": "Photo ID in use"})
 
         # Get the user ref and check if it exists
-        user_ref = db.collection('users').document(uid)
-        user_doc = user_ref.get()
-        if not user_doc.exists:
-            return jsonify({"error": "User does not exist"})
+        if not user_exists(uid):
+            return jsonify({"error": "user doesn't exist"})
 
         # Refers to trashcan database where photo id and other refs are stored
         trashcanref = db.collection('trashcans').document(image_id)
