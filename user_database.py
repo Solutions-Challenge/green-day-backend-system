@@ -14,7 +14,12 @@ def user_exists(user_id):
 
     return user_exist
 
+def business_exists(business_id):
+    user_ref = db.collection('business').document(business_id)
+    user_exist = user_ref.get()
 
+    return user_exist
+    
 def delete_collection(coll_ref, batch_size):
     docs = coll_ref.limit(batch_size).stream()
     deleted = 0
