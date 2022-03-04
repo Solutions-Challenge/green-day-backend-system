@@ -2,9 +2,10 @@ from flask import Flask, json, request, jsonify, Blueprint
 from auth_server import db
 
 from google_storage_functions import *
-from user_database import verify_user, user_exists
+from user_database import verify_user, business_exists
 from location_database import extract_location_data
 import json
+import base64 
 
 bus_data = Blueprint("bus_data", __name__)
 
@@ -37,12 +38,18 @@ def create_business_entry():
         # This is the expected data we want add more necessary
         business_data = {
             "name": None,
-            "pictureURL": None,
+            "imageid": None,
             "category": None,
             "recyclingTypes": None,
             "location": None,
+            "street": None,
+            "city": None,
+            "county": None,
+            "state": None,
+            "zipcode": None,
             "phone": None,
             "website": None,
+            "timeAvailability": None,
             "lat": None,
             "lng": None
         }
@@ -95,7 +102,6 @@ def create_business_entry():
     else:
         return jsonify({'error': 'not POST request'})
 
-
 @bus_data.route('/database/updateBusinessEntry', methods=['POST'])
 def update_business_entry():
     if request.method == 'POST':
@@ -114,16 +120,34 @@ def update_business_entry():
         if not business.exists:
             return jsonify({'error': "Business doesn't exist"})
 
+        ideal_business_data = {
+            "name": None,
+            "pictureURL": None,
+            "category": None,
+            "recyclingTypes": None,
+            "location": None,
+            "street": None,
+            "city": None,
+            "county": None,
+            "state": None,
+            "zipcode": None,
+            "phone": None,
+            "website": None,
+            "timeAvailability": None,
+            "lat": None,
+            "lng": None
+        }
         business_data = business.to_dict()
 
         if business_data.pop('location_ref', True):
             return jsonify({'error': 'Critical error there is no location ref to this location'})
 
+        inputted_business_data = set(business_data.keys()).union(set(ideal_business_data))
         changed = dict()
         # We input intersection of the accepted data and the data we recieved
-        accepted_inputted = set(input_data).intersection(set(business_data.keys()))
+        accepted_inputted = set(input_data).intersection(inputted_business_data)
         for x in accepted_inputted:
-            if business_data[x] != input_data[x]:
+            if business_data[x] != input_data[x] and inputted_business_data[x] != None:
                 business_data[x] = input_data[x]
                 changed[x] = input_data[x]
 
@@ -194,7 +218,6 @@ def query_business_ids():
         latitude = float(request.form['latitude'].strip())
         longitude = float(request.form['longitude'].strip())
 
-
         location_data = extract_location_data(latitude, longitude)
 
         country = location_data['country']
@@ -208,5 +231,54 @@ def query_business_ids():
             business_ids.append(business.id)
 
         return jsonify({"success":  business_ids})
+    else:
+        return jsonify({'error': 'not POST request'})
+
+@bus_data.route('/database/addBusinessImage', methods=['POST'])
+def add_business_image():
+    if request.method == 'POST':
+        id_token = request.form['id_token'].strip()
+        image_id = request.form['image_id'].strip()
+        image = request.form['image_base64'].strip()
+        image = base64.b64decode((image))
+        
+        user = verify_user(id_token)
+        if (user == False):
+            return jsonify({"error": "Auth token is invalid"})
+        uid = user['uid']
+
+        if not business_exists(uid):
+            return jsonify({"error": "User doesn't exist"})
+
+
+        if blob_exists("trashcan_images", image_id):
+            return jsonify({"error": "Photo ID in use"})
+
+        image_ref = db.collection("business").document(uid).collection("images").document(image_id)
+        image_ref.set({'image_id': image_id})
+
+        upload_blob_from_memory("greenday-business-images", image, image_id)
+
+        return jsonify({"success": "Added image"})
+    else:
+        return jsonify({'error': 'not POST request'})
+
+@bus_data.route('/database/getBusinessImages', methods=['POST'])
+def get_business_images():
+    if request.method == 'POST':
+        print(generate_download_signed_url_v4("greenday-business-images", "3b83b98d-30a7-4cd4-8f19-53b4bc0a4039"))
+        uid = request.form['uid'].strip()
+
+        if not business_exists(uid):
+            return jsonify({"error": "User doesn't exist"})
+
+    
+        business_image_stream = db.collection("business").document(uid).collection("images")
+
+        image_urls = []
+        for photo in business_image_stream.stream():
+            image_urls.append(generate_download_signed_url_v4("greenday-business-images", photo.id))
+
+        return jsonify({"success": image_urls})
     else:
         return jsonify({'error': 'not POST request'})
