@@ -120,36 +120,21 @@ def update_business_entry():
         if not business.exists:
             return jsonify({'error': "Business doesn't exist"})
 
-        ideal_business_data = {
-            "name": None,
-            "pictureURL": None,
-            "category": None,
-            "recyclingTypes": None,
-            "location": None,
-            "street": None,
-            "city": None,
-            "county": None,
-            "state": None,
-            "zipcode": None,
-            "phone": None,
-            "website": None,
-            "timeAvailability": None,
-            "lat": None,
-            "lng": None
-        }
         business_data = business.to_dict()
 
-        if business_data.pop('location_ref', True):
+        if "location_ref" not in business_data.keys():
             return jsonify({'error': 'Critical error there is no location ref to this location'})
 
-        inputted_business_data = set(business_data.keys()).union(set(ideal_business_data))
+        inputted_business_data = set(business_data.keys())
         changed = dict()
         # We input intersection of the accepted data and the data we recieved
         accepted_inputted = set(input_data).intersection(inputted_business_data)
+        
         for x in accepted_inputted:
-            if business_data[x] != input_data[x] and inputted_business_data[x] != None:
+            if business_data[x] != input_data[x] and input_data[x] != None:
                 business_data[x] = input_data[x]
                 changed[x] = input_data[x]
+
 
         business_ref.set(business_data)
 
