@@ -251,12 +251,10 @@ def add_business_image():
 @bus_data.route('/database/getBusinessImages', methods=['POST'])
 def get_business_images():
     if request.method == 'POST':
-        print(generate_download_signed_url_v4("greenday-business-images", "3b83b98d-30a7-4cd4-8f19-53b4bc0a4039"))
         uid = request.form['uid'].strip()
 
         if not business_exists(uid):
             return jsonify({"error": "User doesn't exist"})
-
     
         business_image_stream = db.collection("business").document(uid).collection("images")
 
