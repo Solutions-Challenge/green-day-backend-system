@@ -2,12 +2,20 @@ from flask import Flask, json, request, jsonify, Blueprint
 from auth_server import db
 
 from google_storage_functions import *
-from user_database import verify_user, business_exists
+from user_database import verify_user
 from location_database import extract_location_data
 import json
 import base64 
 
 bus_data = Blueprint("bus_data", __name__)
+
+
+def business_exists(user_id):
+    user_ref = db.collection('business').document(user_id)
+    user_exist = user_ref.get()
+
+    return user_exist
+
 
 """
     INPUT:
@@ -153,7 +161,6 @@ def delete_business_entry():
         user = verify_user(id_token)
         if not user:
             return jsonify({"error": "Auth token is invalid"})
-        
         uid = user['uid']
         
         business_ref = db.collection('business').document(uid)
@@ -265,3 +272,30 @@ def get_business_images():
         return jsonify({"success": image_urls})
     else:
         return jsonify({'error': 'not POST request'})
+
+@bus_data.route('/database/deleteBusinessImages', methods=['DELETE'])
+def delete_business_images():
+    if request.method == 'DELETE':
+        id_token = request.form['id_token'].strip()
+        image_ids = json.loads(request.form['image_ids'].strip())
+
+        # Verify the user 
+        user = verify_user(id_token)
+        if not user:
+            return jsonify({"error": "Auth token is invalid"})
+        uid = user['uid']
+
+        if not business_exists(uid):
+            return jsonify({"error": "User doesn't exist"})
+
+        deleted_businesses = []
+        for image_id in image_ids['image_ids']:
+            image_ref = db.collection("business").document(uid).collection("images").document(image_id)
+            if image_ref.get().exists:
+                deleted_businesses.append(image_id)
+                delete_blob('greenday-business-images', image_id)
+            image_ref.delete()
+
+        return jsonify({"success": deleted_businesses})
+    else:
+        return jsonify({'error': 'not DELETE request'})
