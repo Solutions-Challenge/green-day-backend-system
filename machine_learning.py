@@ -63,4 +63,4 @@ def predict():
                     ANS["payload"][i]["ml"] = data[ANS["payload"][i]["displayName"]]["mapData"]
 
             return jsonify({"success": ANS})
-        return jsonify({"error": "among us"})
+        return jsonify({"error": "prediction failed"})

@@ -2,31 +2,37 @@ mapData = [
     {
         "key": 0,
         "name": 'Recyclable',
+        "color": "rgba(51, 170, 51, .2)",
         "icon": 'https://i.imgur.com/CVPZO5u.png'
     },
     {
         "key": 1,
         "name": 'Compostable',
+        "color": "rgba(139,69,19,0.2)",
         "icon": 'https://i.imgur.com/rw6KwV3.png'
     },
     {
         "key": 2,
         "name": 'Landfill',
+        "color": "rgba(255, 255, 255, .2)",
         "icon": 'https://i.imgur.com/D5rAn86.png'
     },
     {
         "key": 3,
         "name": 'E-waste',
+        "color": "rgba(36, 94, 233,0.2)",
         "icon": 'https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Electronic.png'
     },
     {
         "key": 4,
         "name": 'Cardboard',
+        "color": "rgba(196, 164, 132, 0.2)",
         "icon": "https://i.imgur.com/AV4ROhB.png"
     },
     {
         "key": 5,
         "name": "Glass",
+        "color": "rgba(0,0,139, 0.2)",
         "icon": "https://storage.googleapis.com/greenday-6aba2.appspot.com/Materials/Glass.png"
     }
 ]
