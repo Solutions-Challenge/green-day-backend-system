@@ -31,7 +31,7 @@ def generate_download_signed_url_v4(bucket_name, blob_name):
         expiration=datetime.timedelta(minutes=2),
         # Allow GET requests using this URL.
         method="GET",
-        # credentials=signing_credentials
+        credentials=signing_credentials
     )
 
     return url

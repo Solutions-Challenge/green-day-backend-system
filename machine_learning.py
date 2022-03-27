@@ -78,16 +78,20 @@ def predict():
             response = json.loads(REQ.content)
 
             predictions = response.get('predictions', [{}])[0]
+
+            top_score = predictions["detection_scores"][0]
+
+            index = 0
+            for x in predictions["detection_scores"]:
+                if top_score - x < 0.1:
+                    index+=1
             
-            predict = get_top(predictions, 5)
+            predict = get_top(predictions, index)
             
             ANS = {"payload": []}
 
-            
-
             if True:
                 for i in range(len(predict)):
-                    print(data[predict[i]["class"]]["mapData"])
                     if predict[i]["class"] in data:
                         ANS['payload'].append({
                             "ml": {
@@ -100,12 +104,12 @@ def predict():
                                 "boundingBox": {
                                     "normalizedVertices": [
                                         {
-                                            "x": predict[i]["bbox"][0],
-                                            "y": predict[i]["bbox"][1]
+                                            "x": predict[i]["bbox"][1],
+                                            "y": predict[i]["bbox"][0]
                                         },
                                         {
-                                            "x": predict[i]["bbox"][2],
-                                            "y": predict[i]["bbox"][3]
+                                            "x": predict[i]["bbox"][3],
+                                            "y": predict[i]["bbox"][2]
                                         }
                                     ]
                                 },
@@ -114,46 +118,4 @@ def predict():
                             "displayName": predict[i]["class"]
                         })
             return jsonify({"success": ANS})
-            # return jsonify({"success": ANS})
         return jsonify({"error": "prediction failed"})
-
-# {
-#   "payload": [
-#     {
-#       "imageObjectDetection": {
-#         "boundingBox": {
-#           "normalizedVertices": [
-#             {
-#               "x": 0.034553755,
-#               "y": 0.015524037
-#             },
-#             {
-#               "x": 0.941527,
-#               "y": 0.9912563
-#             }
-#           ]
-#         },
-#         "score": 0.9997793
-#       },
-#       "displayName": "Salad"
-#     },
-#     {
-#       "imageObjectDetection": {
-#         "boundingBox": {
-#           "normalizedVertices": [
-#             {
-#               "x": 0.11737197,
-#               "y": 0.7098793
-#             },
-#             {
-#               "x": 0.510878,
-#               "y": 0.87987
-#             }
-#           ]
-#         },
-#         "score": 0.63219965
-#       },
-#       "displayName": "Tomato"
-#     }
-#   ]
-# }
