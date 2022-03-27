@@ -167,5 +167,8 @@ data = {
         "info": "Make sure it doesn't contain any metallic flakes, colored shapes, glitter, or plastics.",
         "mapData": mapData[0]
     },
+    "normal_paper": {
+        "mapData": mapData[0]
+    },
     
 }
