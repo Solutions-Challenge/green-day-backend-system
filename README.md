@@ -9,3 +9,6 @@
         <img src="./assets/images/README/app-store.png" alt="drawing" width="150"/>
     </a>
 </div>
+
+## 📧 Contact Us
+Contact us at nextchart.beachrock@gmail.com for anything!
