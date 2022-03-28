@@ -82,9 +82,13 @@ def predict():
             top_score = predictions["detection_scores"][0]
 
             index = 0
+
             for x in predictions["detection_scores"]:
                 if top_score - x < 0.1:
                     index+=1
+
+            if (index > 5):
+                index = 5
             
             predict = get_top(predictions, index)
             
