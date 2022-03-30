@@ -11,13 +11,23 @@ bus_data = Blueprint("bus_data", __name__)
 
 
 def business_exists(user_id):
+    """
+    INPUT:
+    user_id: The user id given by Firebase Auth
+
+    PURPOSE:
+    The validates the existence of the user id in Firestore
+    """
     user_ref = db.collection('business').document(user_id)
     user_exist = user_ref.get()
 
     return user_exist
 
 
-"""
+
+@bus_data.route('/database/createBusinessEntry', methods=['POST'])
+def create_business_entry():
+    """
     INPUT:
     latitude: X coordinate
     longitude: Y coordinate
@@ -30,9 +40,7 @@ def business_exists(user_id):
     Notes:
     This adds a county entry if it exists and the database will query by level 2 Admin zone ~ County Equivalents 
 
-"""
-@bus_data.route('/database/createBusinessEntry', methods=['POST'])
-def create_business_entry():
+    """
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
         input_data = json.loads(request.form['data'].strip())
@@ -43,7 +51,7 @@ def create_business_entry():
             return jsonify({"error": "Auth token is invalid"})
         uid = user['uid']
 
-        # This is the expected data we want add more necessary
+        # This is the expected data given by our website we can add more as necessary
         business_data = {
             "name": None,
             "imageid": None,
@@ -88,11 +96,8 @@ def create_business_entry():
         location_key = "{}_{}".format(location_data['admin2'], location_data['admin1'])
         country = location_data['country'].lower()
 
-        """# Checks if country in coordinates matches given country
-        if country.lower != (country.lower if business_data['country'] == None else business_data['country'].lower):
-            return jsonify({"error": "Country extracted from coordinates doesn't match given country"})"""
-
         # Gets the level 2 admin zone and sets the key to the level 2 admin zone
+        # /location_data/country/admin2/location_ley/businesses/user_uid
         location_ref = db.collection(u'location_data').document(
             country).collection("admin2").document(location_key).collection("businesses").document(uid)
 
@@ -102,8 +107,8 @@ def create_business_entry():
             "business_ref": business_ref
         })
         
+        # Adds a reference to the business in our locality partitioning system
         business_data['location_ref'] = location_ref
-
         business_ref.set(business_data)
 
         return jsonify({'success': "Business added!"})
@@ -112,6 +117,19 @@ def create_business_entry():
 
 @bus_data.route('/database/updateBusinessEntry', methods=['POST'])
 def update_business_entry():
+    """
+    INPUT:
+    id_token: JWT token authenticating the business
+    data: A json containing the tokens we want to update
+
+    PURPOSE:
+    Updates the values if a business wants to change their information
+
+    NOTES:
+    This will not update the location reference to a business 
+    So if a business updates it's location it won't update in our partitioning system
+
+    """
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
         input_data = json.loads(request.form['data'].strip())
@@ -120,22 +138,27 @@ def update_business_entry():
         user = verify_user(id_token)
         if (user == False):
             return jsonify({"error": "Auth token is invalid"})
-        uid = user['uid']
+        uid = user['uid']   
 
+        # /business/business_id
         business_ref = db.collection('business').document(uid)
 
+        # Verifies if the business exists
         business = business_ref.get()
         if not business.exists:
             return jsonify({'error': "Business doesn't exist"})
 
+        # Extracts the data from the business reference
         business_data = business.to_dict()
 
+        # Checks if the location ref exists
+        # If it doesn't the business can't be found
         if "location_ref" not in business_data.keys():
             return jsonify({'error': 'Critical error there is no location ref to this location'})
 
+        # We input intersection of the accepted data and the data we recieved
         inputted_business_data = set(business_data.keys())
         changed = dict()
-        # We input intersection of the accepted data and the data we recieved
         accepted_inputted = set(input_data).intersection(inputted_business_data)
         
         for x in accepted_inputted:
@@ -154,6 +177,13 @@ def update_business_entry():
 
 @bus_data.route('/database/deleteBusiness', methods=['DELETE'])
 def delete_business_entry():
+    """
+    INPUT:
+    id_token: JWT token authenticating the business
+
+    PURPOSE:
+    Deletes a business from our database
+    """
     if request.method == "DELETE":
         id_token = request.form['id_token'].strip()
         
@@ -163,14 +193,17 @@ def delete_business_entry():
             return jsonify({"error": "Auth token is invalid"})
         uid = user['uid']
         
+        # /business/business_id 
         business_ref = db.collection('business').document(uid)
 
+        # Verifies the business's existence
         business = business_ref.get()
         if not business.exists:
             return jsonify({'error': "Business doesn't exist"})
 
         business_data = business.to_dict()
 
+        # Since the location reference might not always exist for incorrectly created businesses
         try:
             location_ref = business_data['location_ref']
             location_ref.delete()
@@ -185,17 +218,27 @@ def delete_business_entry():
 
 @bus_data.route('/database/getBusinessData', methods=['POST'])
 def get_business_data():
+    """
+    INPUT:
+    uid: A unique identifier for the business
+
+    PURPOSE:
+    Returns all data relevant to queried business
+    """
     if request.method == 'POST':
         uid = request.form['uid'].strip()
 
+        # /business/uid
         business_ref = db.collection('business').document(uid)
 
+        # Verifies the business existence
         business = business_ref.get()
         if not business.exists:
             return jsonify({'error': "Business doesn't exist"})
 
         business_data = business.to_dict()
 
+        # We pop this because we don't want to show the location reference
         if business_data.pop('location_ref', False) == False:
             return jsonify({'error': 'There is no location ref to this location'})
         
@@ -206,19 +249,29 @@ def get_business_data():
 
 @bus_data.route('/database/queryBusiness', methods=['POST'])
 def query_business_ids():
+    """
+    INPUT:
+    latitude: 
+    longitude:
+
+    PURPOSE:
+    Returns all business ids in a certain admin2 zone which are county or county equivalents
+    """
     if request.method == 'POST':
         latitude = float(request.form['latitude'].strip())
         longitude = float(request.form['longitude'].strip())
 
+        # Returns location data for a certain latitude and longitude
         location_data = extract_location_data(latitude, longitude)
 
+        # Queries the location data based on our database partitioning
         country = location_data['country']
         admin2 = "{}_{}".format(location_data['admin2'], location_data['admin1'])
 
+        # /location_data/country/admin2/admin2_zone/businesses
         business_locations = db.collection('location_data').document(country).collection('admin2').document(admin2).collection('businesses')
 
         business_ids = []
-
         for business in business_locations.stream():
             business_ids.append(business.id)
 
@@ -228,20 +281,28 @@ def query_business_ids():
 
 @bus_data.route('/database/addBusinessImage', methods=['POST'])
 def add_business_image():
+    """
+    INPUT:
+    id_token: JWT token authenticating the business
+    image_id: A unique name for the image
+    image_base64: A base64 encoded image we want to add to the database
+
+    PURPOSE:
+    Returns all business ids in a certain admin2 zone which are county or county equivalents
+    """
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
         image_id = request.form['image_id'].strip()
         image = request.form['image_base64'].strip()
         image = base64.b64decode((image))
-        
+
         user = verify_user(id_token)
         if (user == False):
             return jsonify({"error": "Auth token is invalid"})
-        uid = user['uid']
+        uid = user['uid']   
 
         if not business_exists(uid):
             return jsonify({"error": "User doesn't exist"})
-
 
         if blob_exists("trashcan_images", image_id):
             return jsonify({"error": "Photo ID in use"})
@@ -257,6 +318,13 @@ def add_business_image():
 
 @bus_data.route('/database/getBusinessImages', methods=['POST'])
 def get_business_images():
+    """
+    INPUT:
+    uid: A unique identifier for a business
+
+    PURPOSE:
+    Returns a photo urls associated with a certain business
+    """
     if request.method == 'POST':
         uid = request.form['uid'].strip()
 
@@ -275,6 +343,14 @@ def get_business_images():
 
 @bus_data.route('/database/deleteBusinessImages', methods=['DELETE'])
 def delete_business_images():
+    """
+    INPUT:
+    id_token: JWT token authenticating the business
+    image_ids: A json containing a list of image_ids the business wants to delete
+
+    PURPOSE:
+    Deletes images associated with a business 
+    """
     if request.method == 'DELETE':
         id_token = request.form['id_token'].strip()
         image_ids = json.loads(request.form['image_ids'].strip())
@@ -290,10 +366,13 @@ def delete_business_images():
 
         deleted_businesses = []
         for image_id in image_ids['image_ids']:
+            # Obtains a reference to the image given the image id
             image_ref = db.collection("business").document(uid).collection("images").document(image_id)
+
             if image_ref.get().exists:
                 deleted_businesses.append(image_id)
                 delete_blob('greenday-business-images', image_id)
+                
             image_ref.delete()
 
         return jsonify({"success": deleted_businesses})

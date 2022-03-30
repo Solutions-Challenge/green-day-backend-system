@@ -7,7 +7,9 @@ import base64
 
 userimg_data = Blueprint("userimg_data", __name__)
 
-"""
+@userimg_data.route('/database/addImg', methods=['POST'])
+def add_picture():
+    """
     // THIS DOESN'T CHECK IF DATA IS CORRECTLY FORMATTED
     /database/addImg [POST]
     INPUT:
@@ -18,11 +20,7 @@ userimg_data = Blueprint("userimg_data", __name__)
     PURPOSE:
     Adds a picture to user entry in firebase and google cloud storage along with metadata
 
-"""
-
-
-@userimg_data.route('/database/addImg', methods=['POST'])
-def add_picture():
+    """
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
         data = json.loads(request.form['data'].strip())
@@ -52,8 +50,9 @@ def add_picture():
     else:
         return jsonify({'error': 'not POST request'})
 
-
-"""
+@userimg_data.route('/database/getImg', methods=['POST'])
+def get_picture():
+    """
     /database/getImg [POST]
     INPUT:
     'id_token': JWT token given by user
@@ -62,11 +61,7 @@ def add_picture():
     PURPOSE:
     Returns the base64 encoding of photo and json with metadata
 
-"""
-
-
-@userimg_data.route('/database/getImg', methods=['POST'])
-def get_picture():
+    """
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
         image_id = request.form['image_id'].strip()
@@ -86,8 +81,10 @@ def get_picture():
         if not doc.exists:
             return jsonify({'error': "Picture doesn't exist for this user"})
 
+        # Generates a url to the photo from Google Cloud Storage
         picture = generate_download_signed_url_v4(
             'greenday-user-photos', image_id)
+
         return jsonify({
             "success": {
                 "photo": str(picture),
@@ -97,31 +94,31 @@ def get_picture():
     else:
         return jsonify({'error': 'not POST request'})
 
-
-"""
-    /database/getImgKeys [GET]
-    INPUT:
-    'id_token': JWT token given by user
-
-    PURPOSE:
-    Returns all image_ids associated with user account
-
-"""
-
-
 @userimg_data.route('/database/getImgKeys', methods=['POST'])
 def get_image_keys():
+    """
+        /database/getImgKeys [GET]
+        INPUT:
+        'id_token': JWT token given by user
+
+        PURPOSE:
+        Returns all image_ids associated with user account
+
+    """
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
+
         # Verify our auth token and find uid to put photo data into database
         user = verify_user(id_token)
         if not user:
             return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
+        # /users/user_id/photos
         docref = db.collection('users').document(uid).collection("photos")
         docs = docref.stream()
 
+        # Returns every photo_id the user owns 
         array = []
         for doc in docs:
             array.append(doc.id)
@@ -130,8 +127,9 @@ def get_image_keys():
     else:
         return jsonify({'error': 'not POST request'})
 
-
-"""
+@userimg_data.route('/database/deleteImg', methods=['DELETE'])
+def delete_picture():
+    """
     //THIS DOESNT CHECK IF DATA IS VALID OR NOT
     /database/addItem
     INPUT:
@@ -142,28 +140,27 @@ def get_image_keys():
     PURPOSE:
     Deletes a picture from user database entry and user photos if photo is associated with account
 
-"""
-
-
-@userimg_data.route('/database/deleteImg', methods=['DELETE'])
-def delete_picture():
+    """
     if request.method == 'DELETE':
         id_token = request.form['id_token'].strip()
         image_id = request.form['image_id'].strip()
 
+        # Validates the user id token
         user = verify_user(id_token)
         if not user:
             return jsonify({'error': "ID token is invalid"})
         uid = user["uid"]
 
+        # /users/user_id/photos/image_id
         photo_ref = db.collection('users').document(
             uid).collection("photos").document(image_id)
 
+        # Validates the photos existence
         photo = photo_ref.get()
-
         if not photo.exists:
             return jsonify({"error": "Picture doesn't exist or user doesn't own photo"})
 
+        # Deletes the photo reference from Firestore and Google Cloud Storage
         photo_ref.delete()
         delete_blob("greenday-user-photos", image_id)
 
@@ -171,8 +168,10 @@ def delete_picture():
     else:
         return jsonify({'error': 'not DELETE request'})
 
-
-"""
+@userimg_data.route('/database/addItem', methods=['POST'])
+def add_item():
+    """
+    !THIS FUNCTION IS DEPRECIATED DO NOT USE 
     //THIS DOESNT CHECK IF DATA IS VALID OR NOT
     /database/addItem
     INPUT:
@@ -183,17 +182,12 @@ def delete_picture():
     PURPOSE:
     This adds a json to the MULTI array which holds data for bounding boxes
 
-"""
-
-
-@userimg_data.route('/database/addItem', methods=['POST'])
-def add_item():
+    """
     if request.method == "POST":
         id_token = request.form['id_token'].strip()
         image_id = request.form['image_id'].strip()
         data = json.loads(request.form['data'].strip())
 
-        print(data)
         # Verify our auth token and find uid to put photo data into database
         user = verify_user(id_token)
         if not user:

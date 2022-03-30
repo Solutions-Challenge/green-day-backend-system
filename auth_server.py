@@ -1,3 +1,6 @@
+# This file holds all of our server side auth keys 
+# This prevents us from generating two instances of a specific credential
+
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 import googlemaps

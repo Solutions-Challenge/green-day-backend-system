@@ -102,7 +102,7 @@ def delete_user_data():
         photo_ref = user_ref.collection("photos")
         owned_trashcan_ref = user_ref.collection("owned_trashcans")
 
-        # Deletes all user owned photos
+        # Deletes all user owned photos from cloud storage
         user_images = []
         
         for image_id in photo_ref.stream():
@@ -123,6 +123,10 @@ def delete_user_data():
 
             location_ref = trashcan['location_ref']
             image_id = trashcan['image_id']
+
+            # Attempts to delete the image from the database
+            # However if someone muddles with the photos without the api
+            # This could cause errors
             try:
                 delete_blob("trashcan_images", image_id)
                 user_trashcans.append(image_id)
@@ -131,7 +135,7 @@ def delete_user_data():
             
             trashcan_ref.delete()
             location_ref.delete()
-            
+        
         delete_collection(user_ref.collection('owned_trashcans'), 1000)
 
         user_ref.delete()

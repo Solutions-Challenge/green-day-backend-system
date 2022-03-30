@@ -1,3 +1,5 @@
+# This file contains all recycling types that our app can process
+
 mapData = [
     {
         "key": 0,

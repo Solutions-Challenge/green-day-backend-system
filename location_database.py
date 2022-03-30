@@ -30,6 +30,8 @@ def extract_location_data(latitude, longitude):
         "locality": Town or city equivalent
     }
 
+    If country is not found, ergo invalid coordinates, returns None
+
     PURPOSE:
     Returns a normalized global address system so we can effectively partition our data
     """
@@ -46,25 +48,18 @@ def extract_location_data(latitude, longitude):
     for address in addresses:
         for t in address['address_components']:
             if "sublocality_level_1" in t['types']:
-                #print("sub1", t['long_name'])
                 sub1.append(t['long_name'])
             if "sublocality_level_2" in t['types']:
-                #print('sub2', t['long_name'])
                 sub2.append(t['long_name'])
             if "administrative_area_level_2" in t['types']:
-                #print('admin2', t['long_name'])
                 admin2.append(t['long_name'])
             if "administrative_area_level_1" in t['types']:
-                #print('admin1', t['long_name'])
                 admin1.append(t['long_name'])
             if "country" in t['types']:
-                #print('country', t['long_name'])
                 country.append(t['long_name'])
             if "postal_code" in t['types']:
-                #print('code', t['long_name'])
                 code.append(t['long_name'])
             if "locality" in t['types']:
-                #print('code', t['long_name'])
                 locality.append(t['long_name'])
 
     sub1 = most_frequent(sub1)
