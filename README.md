@@ -20,7 +20,7 @@ Refer to the Google Cloud and Firebase documention to set up your service accoun
 - https://firebase.google.com/docs/admin/setup
 - https://firebase.google.com/docs/firestore
 
-We weren't sure how you would be testing our backend without using the our Google cloud account, so we added the service account to our Github. Our club leader has suggested to make our Github private as a result. Normally this would be a huge breach in security but since our Github is private there should be little risk. 
+We weren't sure how you would be testing our backend without using the our Google cloud account, our club leader has suggested pushing our service account and making our Github private. Normally this would be a huge breach in security but since our Github is private there should be little risk. 
 
 ## 💻 Running Locally
 First create a virtual enviornment with python3.8 
@@ -58,7 +58,7 @@ MIN_INSTANCES: The minimum number of instances you want to ramp down from
 MAX_INSTANCES: The maximum number of instances you want to server
 ```
 
-Note that min_instances can be 0 which will make your services slower if you have  
+Note that min_instances can be 0 which will make your services slower since it will have to cold start after no activity. 
 
 ## Function Overview
 All requests are made through x-www-form-urlencoded format except for machine_learning.py
