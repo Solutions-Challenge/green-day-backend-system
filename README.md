@@ -21,7 +21,11 @@ Refer to the Google Cloud and Firebase documention to set up your service accoun
 - https://firebase.google.com/docs/firestore
 
 ## 💻 Running Locally
-First export your service account using
+First install the neccessary python libraries using
+```
+$ pip install -r requirements.txt
+```
+Export your service account using
 ```
 $ export GOOGLE_APPLICATION_CREDENTIALS=service_account.json
 ```
