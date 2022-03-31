@@ -36,7 +36,7 @@ $ pip install -r requirements.txt
 
 Export your service account using (remember to write the actual name of your service account)
 ```
-$ export GOOGLE_APPLICATION_CREDENTIALS={service_account.json}
+$ export GOOGLE_APPLICATION_CREDENTIALS={{DIRECTORY_TO_SERVICE_ACCOUNT.JSON}}
 ```
 
 Finally to run simply do
