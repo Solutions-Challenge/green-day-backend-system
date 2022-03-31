@@ -12,8 +12,8 @@ trash_data = Blueprint("trash_data", __name__)
 def create_trashcan_coords():
     """
     INPUT:
-    latitude: X coordinate
-    longitude: Y coordinate
+    'latitude': X coordinate
+    'longitude': Y coordinate
 
     PURPOSE:
     Adds a trashcan with picture to location database
@@ -33,6 +33,7 @@ def create_trashcan_coords():
         image = request.form['image_base64'].strip()
         image = base64.b64decode((image))
 
+        # We had a problem with extracting data from jsons
         image_id = request.form['image_id'].strip()
         latitude = request.form['latitude'].strip()
         longitude = request.form['longitude'].strip()
@@ -112,7 +113,7 @@ def create_trashcan_coords():
 def get_trashcan_keys():
     """
     INPUT:
-    id_token: The JWT token given by the user
+    'id_token': The JWT token given by the user
 
     PURPOSE:
     Gets all trashcans that were taken by the user
@@ -143,8 +144,8 @@ def get_trashcan_keys():
 def delete_trashcan():
     """
     INPUT:
-    id_token: JWT token 
-    image_id: Name of trashcan
+    'id_token': JWT token 
+    'image_id': Name of trashcan
 
     PURPOSE:
     Deletes trashcan from location, user, and trashcan, and photo databases
@@ -231,11 +232,10 @@ def get_trashcan():
 def get_trashcan_image():
     """
     INPUT:
-    id_token: JWT token 
-    image_id: A list of trashcan ids 
+    image_ids: A list of trashcan ids 
 
     PURPOSE:
-    Gets trashcans from the trashcan database if user owns it
+    Generates and returns a url from the trashcan database 
     """
 
     if request.method == 'POST':

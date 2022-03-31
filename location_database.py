@@ -85,7 +85,9 @@ def extract_location_data(latitude, longitude):
         "locality": locality.lower()
     }
 
-"""
+@loc_data.route('/location/reverseGeolocation', methods=['POST'])
+def reverse_geolocation():
+    """
     INPUT:
     latitude: X coordinate
     longitude: Y coordinate
@@ -102,9 +104,7 @@ def extract_location_data(latitude, longitude):
     
     Relative Size
     postcode ~ locality < admin2 < admin1 < counttry
-"""
-@loc_data.route('/location/reverseGeolocation', methods=['POST'])
-def reverse_geolocation():
+    """
     latitude = float(request.form['latitude'].strip())
     longitude = float(request.form['longitude'].strip())
     geolocation = gmaps.reverse_geocode((latitude, longitude))

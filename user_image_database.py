@@ -11,7 +11,6 @@ userimg_data = Blueprint("userimg_data", __name__)
 def add_picture():
     """
     // THIS DOESN'T CHECK IF DATA IS CORRECTLY FORMATTED
-    /database/addImg [POST]
     INPUT:
     'id_token': JWT token given by user
     'data': The json containing the photo meta data
@@ -53,7 +52,6 @@ def add_picture():
 @userimg_data.route('/database/getImg', methods=['POST'])
 def get_picture():
     """
-    /database/getImg [POST]
     INPUT:
     'id_token': JWT token given by user
     'image_id': The name of the photo
@@ -97,12 +95,11 @@ def get_picture():
 @userimg_data.route('/database/getImgKeys', methods=['POST'])
 def get_image_keys():
     """
-        /database/getImgKeys [GET]
-        INPUT:
-        'id_token': JWT token given by user
+    INPUT:
+    'id_token': JWT token given by user
 
-        PURPOSE:
-        Returns all image_ids associated with user account
+    PURPOSE:
+    Returns all image_ids associated with user account
 
     """
     if request.method == "POST":
@@ -131,7 +128,6 @@ def get_image_keys():
 def delete_picture():
     """
     //THIS DOESNT CHECK IF DATA IS VALID OR NOT
-    /database/addItem
     INPUT:
     'id_token': JWT token given by user 
     'image_id': The name of the photo
@@ -173,7 +169,6 @@ def add_item():
     """
     !THIS FUNCTION IS DEPRECIATED DO NOT USE 
     //THIS DOESNT CHECK IF DATA IS VALID OR NOT
-    /database/addItem
     INPUT:
     'id_token': JWT token given by user 
     'image_id': The name of the photo

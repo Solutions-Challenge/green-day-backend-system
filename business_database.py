@@ -29,10 +29,8 @@ def business_exists(user_id):
 def create_business_entry():
     """
     INPUT:
-    latitude: X coordinate
-    longitude: Y coordinate
-    id_token: JWT token authenticating the business
-    business_data: Textified Json with business data
+    'id_token': JWT token authenticating the business
+    'business_data': Textified Json with business data
 
     PURPOSE:
     Adds a business with picture to location database
@@ -119,8 +117,8 @@ def create_business_entry():
 def update_business_entry():
     """
     INPUT:
-    id_token: JWT token authenticating the business
-    data: A json containing the tokens we want to update
+    'id_token': JWT token authenticating the business
+    'data': A json containing the tokens we want to update
 
     PURPOSE:
     Updates the values if a business wants to change their information
@@ -179,7 +177,7 @@ def update_business_entry():
 def delete_business_entry():
     """
     INPUT:
-    id_token: JWT token authenticating the business
+    'id_token': JWT token authenticating the business
 
     PURPOSE:
     Deletes a business from our database
@@ -220,7 +218,7 @@ def delete_business_entry():
 def get_business_data():
     """
     INPUT:
-    uid: A unique identifier for the business
+    'uid': A unique identifier for the business
 
     PURPOSE:
     Returns all data relevant to queried business
@@ -251,8 +249,8 @@ def get_business_data():
 def query_business_ids():
     """
     INPUT:
-    latitude: 
-    longitude:
+    'latitude': 
+    'longitude':
 
     PURPOSE:
     Returns all business ids in a certain admin2 zone which are county or county equivalents
@@ -283,9 +281,9 @@ def query_business_ids():
 def add_business_image():
     """
     INPUT:
-    id_token: JWT token authenticating the business
-    image_id: A unique name for the image
-    image_base64: A base64 encoded image we want to add to the database
+    'id_token': JWT token authenticating the business
+    'image_id': A unique name for the image
+    'image_base64': A base64 encoded image we want to add to the database
 
     PURPOSE:
     Returns all business ids in a certain admin2 zone which are county or county equivalents
@@ -320,7 +318,7 @@ def add_business_image():
 def get_business_images():
     """
     INPUT:
-    uid: A unique identifier for a business
+    'uid': A unique identifier for a business
 
     PURPOSE:
     Returns a photo urls associated with a certain business
@@ -345,8 +343,8 @@ def get_business_images():
 def delete_business_images():
     """
     INPUT:
-    id_token: JWT token authenticating the business
-    image_ids: A json containing a list of image_ids the business wants to delete
+    'id_token': JWT token authenticating the business
+    'image_ids': A json containing a list of image_ids the business wants to delete
 
     PURPOSE:
     Deletes images associated with a business 

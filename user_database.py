@@ -5,17 +5,30 @@ from firebase_admin import auth
 
 user_data = Blueprint('user_data', __name__)
 
-"""
-Takes a user_id and checks if there is a database entry
-"""
+
 def user_exists(user_id):
+    """
+    INPUT:
+    user_id: A unique identifier for each user
+
+    PURPOSE:
+    Takes a user_id and checks if there is a database entry in Firestore
+    """
     user_ref = db.collection('users').document(user_id)
     user_exist = user_ref.get()
 
     return user_exist
 
-    
+
 def delete_collection(coll_ref, batch_size):
+    """
+    INPUT:
+    coll_ref: A reference to the collection we want to delete
+    batch_size: Since this is a recursive function this acts a limit to the recursion depth 
+
+    PURPOSE:
+    Recursively deletes a collection its sub collections and documents
+    """
     docs = coll_ref.limit(batch_size).stream()
     deleted = 0
 
@@ -29,28 +42,36 @@ def delete_collection(coll_ref, batch_size):
 
 
 def verify_user(id_token):
+    """
+    INPUT:
+    id_token: A JWT token given by the user
+    
+    PURPOSE:
+    Verifies a JWT token and reutnrs the decoded token. 
+    """
+
+    # verify_id_token throws an exception when the auth token is invalid or old
     try:
         decoded_token = auth.verify_id_token(id_token)
+
+        # Since an anonymous user shouldn't be able to access our database services
+        # We act as if anonymous JWT tokens are invalid
         if decoded_token['firebase']['sign_in_provider'] == "anonymous":
             return False
     except:
         return False
     return decoded_token
 
-
-"""
-    /database/createUser [POST]
-    INPUT:
+@user_data.route('/database/createUser', methods=['POST'])
+def create_user():
+    """
+    INPUT: 
     'id_token': JWT token given by user
 
     PURPOSE: 
     Creates a user entry in firebase
     
-"""
-
-
-@user_data.route('/database/createUser', methods=['POST'])
-def create_user():
+    """
     if request.method == 'POST':
         id_token = request.form['id_token'].strip()
 
@@ -70,17 +91,16 @@ def create_user():
         return jsonify({'error': 'not POST request'})
 
 
-"""
-    /database/deleteUser [DELETE]
+@user_data.route('/database/deleteUser', methods=['DELETE'])
+def delete_user_data():
+    """
     INPUT:
     'id_token': JWT token given by user
 
     PURPOSE:
     Delete user from database and all photos associated with account
 
-"""
-@user_data.route('/database/deleteUser', methods=['DELETE'])
-def delete_user_data():
+    """
     if request.method == "DELETE":
         id_token = request.form['id_token'].strip()
 
